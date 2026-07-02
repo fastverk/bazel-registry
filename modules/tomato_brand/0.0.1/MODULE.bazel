@@ -1,0 +1,38 @@
+# tomato-brand — the tomato-bazel visual identity: tomato CONTENT (the parametric
+# tomato mark + palette) consuming the reusable brand pipeline from @brando.
+#
+# tomato-bazel is a curated fork / distribution of Bazel (a "Bazel distro"). Its
+# mark is its OWN brand — a clean, modern, friendly tomato whose green calyx nods
+# to Bazel's leaf. The geometry lives here; the machinery is brando's.
+#
+# Hermetic: the tomato generator runs in-build as a py_binary (rules_python + a
+# pip lock pulling shapely/svgwrite/pillow wheels) importing @brando//marklib.
+module(
+    name = "tomato_brand",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+
+# brando — the reusable brand pipeline (marklib + the packaging macros).
+# Resolved from the fastverk registry (mattmarshall/brando).
+bazel_dep(name = "brando", version = "0.0.1")
+
+# ─── hermetic Python (the tomato generator) ─────────────────────────
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    is_default = True,
+    python_version = "3.12",
+)
+use_repo(python, "python_3_12")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "tomato_pip",
+    python_version = "3.12",
+    requirements_lock = "//:requirements.txt",
+)
+use_repo(pip, "tomato_pip")
