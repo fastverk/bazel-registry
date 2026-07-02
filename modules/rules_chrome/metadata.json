@@ -1,16 +1,17 @@
 {
-  "homepage": "https://github.com/tomato-bazel/rules_chrome",
-  "maintainers": [
-    {
-      "name": "Matt Marshall",
-      "github": "mattmarshall"
-    }
-  ],
-  "repository": [
-    "github:tomato-bazel/rules_chrome"
-  ],
-  "versions": [
-    "0.1.0"
-  ],
-  "yanked_versions": {}
+    "homepage": "https://github.com/tomato-bazel/rules_chrome",
+    "maintainers": [
+        {
+            "name": "Matt Marshall",
+            "github": "mattmarshall"
+        }
+    ],
+    "repository": [
+        "github:tomato-bazel/rules_chrome"
+    ],
+    "versions": [
+        "0.1.0",
+        "0.1.1"
+    ],
+    "yanked_versions": {}
 }

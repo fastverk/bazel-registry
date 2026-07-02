@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-o/xrDi/TImMZ1HAeUVVbAzxo7PrYxS2T77k9Sm8wIA8=",
+  "strip_prefix": "rules_chrome-0.1.1",
+  "url": "https://github.com/tomato-bazel/rules_chrome/archive/refs/tags/v0.1.1.tar.gz"
+}
