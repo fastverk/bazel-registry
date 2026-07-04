@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/tomato-bazel/rules_tla",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:tomato-bazel/rules_tla"
+  ],
+  "versions": [
+    "0.1.0"
+  ],
+  "yanked_versions": {}
+}
