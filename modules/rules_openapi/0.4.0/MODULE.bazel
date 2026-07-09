@@ -1,0 +1,78 @@
+module(
+    name = "rules_openapi",
+    version = "0.4.0",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# ── Go client codegen (the default, consumer-facing path) ──────────────────────
+# The default openapi_go_client codegen plugin wraps oapi-codegen, and the clients
+# it generates compile against github.com/oapi-codegen/runtime. rules_go + gazelle's
+# go_deps provide the plugin's build deps and the client runtime from the repo-root
+# go.mod / go.sum. These are the ONLY non-dev deps a consumer needs for Go clients.
+bazel_dep(name = "rules_go", version = "0.60.0")
+bazel_dep(name = "gazelle", version = "0.44.0")
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.24.4")
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_mod = "//:go.mod")
+use_repo(
+    go_deps,
+    "com_github_getkin_kin_openapi",
+    "com_github_oapi_codegen_oapi_codegen_v2",
+    "com_github_oapi_codegen_runtime",
+    "in_gopkg_yaml_v3",
+    "org_golang_x_tools",
+)
+
+register_toolchains("//go:default_go_client_codegen_toolchain")
+
+# ── Rust client codegen (dev-only wiring) ──────────────────────────────────────
+# rules_rust + crate_universe + the Rust toolchain are marked dev_dependency so
+# they are NOT forced into Go-only consumers' module graphs (a Go consumer of
+# openapi_go_client should not pull rules_rust / register Rust toolchains). They
+# stay active when rules_openapi is the root module (its own tests + examples).
+#
+# The Rust codegen toolchain is registered in //.bazelrc via --extra_toolchains,
+# NOT here: register_toolchains() in MODULE.bazel propagates to every consumer,
+# which is exactly what we're avoiding. Consumers of the Rust rules add
+# `bazel_dep(name = "rules_rust", ...)`, the crate_universe deps, and register
+# `//rust:default_rust_client_codegen_toolchain` (+ their Rust toolchains)
+# themselves — see the "Install" section of README.md.
+bazel_dep(name = "rules_jsonschema", version = "0.1.0", dev_dependency = True)
+bazel_dep(name = "rules_rust", version = "0.70.0", dev_dependency = True)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust", dev_dependency = True)
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate", dev_dependency = True)
+crate.from_cargo(
+    name = "openapi_crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//tools/openapi_to_rust_client:Cargo.toml",
+        "//tools/contract_test:Cargo.toml",
+    ],
+)
+use_repo(crate, "openapi_crates")
+
+# Dev-only example fixture: the canonical OpenAPI 3.0 petstore.yaml
+# fetched on demand from OAI/OpenAPI-Specification.
+openapi_examples = use_extension(
+    "//openapi/private:extensions.bzl",
+    "openapi_examples_extension",
+    dev_dependency = True,
+)
+use_repo(openapi_examples, "openapi_keeper_example")
+
+# Dev-only.
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)

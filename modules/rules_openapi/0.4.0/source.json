@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-0EIPd7dA+TAZIC0VtuBR0wxvGn+ERcYj2q5taWNau4I=",
+  "strip_prefix": "rules_openapi-0.4.0",
+  "url": "https://github.com/tomato-bazel/rules_openapi/archive/refs/tags/v0.4.0.tar.gz"
+}
