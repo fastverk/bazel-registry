@@ -1,0 +1,54 @@
+# rules_fastverk_plugin — the portable fastverk console-plugin build macro.
+#
+# `fastverk_plugin` (//plugin:defs.bzl) emits a plugin backend's full Bazel target
+# set from one call: a rust_library + rust_binary + rust_test, an optional proto
+# cargo_build_script, and an OCI service image. Promoted out of botnoc/tools/plugin
+# so ANY standalone module can build a fastverk plugin with the macro.
+#
+# The portability fix vs the botnoc-internal original: the macro NEVER loads
+# `@crates` and NEVER hardcodes `//crates/...` labels. The CALLER passes its own
+# crate deps (`deps` = `all_crate_deps(normal = True)` loaded from the caller's own
+# `@crates`), so the plugin's crates — including the `fastverk-plugin-server` HTTP
+# facade consumed as a cargo dep — resolve in the CALLER's crate_universe. One
+# universe → no duplicate tonic/tokio symbols across a module boundary.
+#
+# Also ships `rust_service_image` (//oci:defs.bzl) + a distroless/cc base, moved
+# here from botnoc/tools/oci so a plugin's image target needs no botnoc deps.
+module(
+    name = "rules_fastverk_plugin",
+    version = "0.0.1",
+)
+
+# Rule definitions the macro loads. Toolchain resolution + the crate universe are
+# the CONSUMER's (registered in the consumer/root module); bzlmod MVS collapses
+# these to one shared rules_rust across the graph.
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+# @protobuf//:protoc — the hermetic protoc the proto cargo_build_script drives.
+bazel_dep(name = "protobuf", version = "33.4")
+
+# rust_service_image (//oci:defs.bzl) is built on rules_oci + rules_pkg; the layer
+# tar needs aspect_bazel_lib (transitive of rules_oci, declared for clarity).
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+
+# distroless/cc base for plugin service images (glibc + ca-certs, nothing else).
+# Same digest botnoc pins; namespaced repo name so a consumer can pull its own
+# without colliding. Surfaced to consumers as `//oci:base_image` (an alias).
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "rules_fastverk_plugin_distroless_cc",
+    digest = "sha256:6714977f9f02632c31377650c15d89a7efaebf43bab0f37c712c30fc01edb973",
+    image = "gcr.io/distroless/cc-debian12",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(
+    oci,
+    "rules_fastverk_plugin_distroless_cc",
+    "rules_fastverk_plugin_distroless_cc_linux_amd64",
+    "rules_fastverk_plugin_distroless_cc_linux_arm64_v8",
+)
