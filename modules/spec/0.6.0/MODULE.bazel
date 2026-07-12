@@ -1,0 +1,155 @@
+"""spec — shared substrate for Lean-grounded specification projects.
+
+First content: the generic Jena/RDF corpus toolkit extracted from the
+Aion repo (kg.Loader / AionPaths / Writer / GateHarness + Gates, the
+kg.edit write-ops mutation primitive, and the kg.reasoner.llm adapter
+SPI). Consumed by Aion (the corpus gates, lint, reasoner, lean tooling)
+and by mycelium (the kg_research design-spike orchestrator) so there is
+one copy instead of duplicated trees.
+
+Future scope (per narrative/rules-spec-kg-retirement-sequencing.md in the
+Aion repo): the lean_emit pipelines, the graph-integrity gate macros, and
+the narrative-site builder land here too as the kg retirement completes.
+"""
+
+module(
+    name = "spec",
+    version = "0.6.0",
+)
+
+bazel_dep(name = "rules_java", version = "8.6.1")
+bazel_dep(name = "rules_jvm_external", version = "6.5")
+
+# Jena (embedded SPARQL/RDF), slf4j backend, and directories (platform
+# cache paths for the LLM-response cache). Coordinates mirror Aion +
+# mycelium so the lifted sources build unchanged.
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "maven",
+    artifacts = [
+        "org.apache.jena:apache-jena-libs:5.0.0",
+        "org.apache.jena:jena-shacl:5.0.0",
+        "org.slf4j:slf4j-simple:2.0.13",
+        "dev.dirs:directories:26",
+    ],
+    fetch_sources = False,
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+use_repo(maven, "maven")
+
+# Lean toolchain — backs the generic spec-framework modules under lean/
+# (Aion.Spec.{Universe,Predicates,Kernel,Axioms}, Aion.Corpus.Schema,
+# Aion.Emit.{TtlEmit,MdEmit}), lifted from the Aion repo. These import
+# nothing external (pure Lean 4 core), so the lake workspace declares no
+# requires. Toolchain version matches Aion's (v4.30.0-rc2) so the modules
+# compile identically whether built here or as srcs in an Aion lean_test.
+# 0.3.6 ships the dep-free-lake-workspace relaxation this repo's empty
+# `require` list needs.
+bazel_dep(name = "rules_lean", version = "0.3.6")
+
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "spec_lake",
+    lake_manifest = "//lean/lake:lake-manifest.json",
+    lakefile = "//lean/lake:lakefile.lean",
+    lean_toolchain = "//lean/lake:lean-toolchain",
+)
+use_repo(lake, "spec_lake")
+
+register_toolchains("@spec_lake//:lean_toolchain_def")
+
+# rules_rdf (engine-agnostic RDF rules) + rules_jena (Jena toolchain impls).
+# spec uses these to define its corpus gate library declaratively: an
+# rdf_dataset over the RFC vocabulary + a spec_corpus_gates macro wiring
+# rdf_validate_test (SHACL shapes) + sparql_query_test (consistency queries)
+# over the ontology files it hosts under rdf/.
+bazel_dep(name = "rules_rdf", version = "0.3.0")
+bazel_dep(name = "rules_jena", version = "0.3.0")
+
+# Paper toolchain: tectonic compiles the crystallization whitepaper
+# (//paper:crystallization, formalizing docs/rfc-001b) to PDF. rules_*
+# modules don't propagate use_repo, so the extension + toolchain are wired
+# here. Resolves from the same fastverk registry as rules_lean/rdf/jena.
+bazel_dep(name = "rules_tectonic", version = "0.2.0")
+
+tectonic = use_extension("@rules_tectonic//tectonic:extensions.bzl", "tectonic")
+use_repo(tectonic, "tectonic")
+
+register_toolchains("@tectonic//:tectonic_toolchain_def")
+
+# Graph rendering: rules_graphviz renders the authored .dot spec-graph figures
+# (//graph) to SVG hermetically (WASM graphviz under a bun runtime — no host
+# `dot`), and converts those SVGs to vector PDF (svg_pdf) for the deck (//deck)
+# the same way. These SVGs are the canonical, web-/SPARQL-regenerable render of
+# the crank graph. rules_graphviz registers its own bun + graphviz toolchains at
+# module level, so a bare bazel_dep is all the consumer side needs.
+#
+# 0.2.0 adds the svg_pdf/dot_pdf vector-PDF path. Until it is tagged + published
+# to the registry, resolve it from the sibling working tree so this repo builds
+# against the local copy. (Drop the override once v0.2.0 is in the registry.)
+bazel_dep(name = "rules_graphviz", version = "0.2.0")
+local_path_override(
+    module_name = "rules_graphviz",
+    path = "../rules_graphviz",
+)
+
+# The crank predict contract + its gRPC engine/services moved to the dedicated
+# `crank` repo (github:fastverk/crank — //proto, //engine, //deploy/helm). spec
+# keeps the substrate the crank builds on: the Lean corrector proof
+# (lean/Spec/Compaction), the RDF corpus toolkit + gates, and the RFC vocabulary.
+# What remains here is the RDF-gate-side worked crank (//crank: crank_003 gates +
+# measure over the materialized ratio corpus), which needs only rules_rdf.
+
+# ── Rust console plugin: services/spec (the fastverk `spec` plugin) ────────────
+# repos/spec also hosts the Rust/axum plugin backend that surfaces the estate's
+# formal specs in the fastverk console (Specs / Contracts / Proof-Status). It
+# builds with the promoted `fastverk_plugin` macro (rules_fastverk_plugin) and its
+# own isolated crate_universe; plain `cargo` builds the same workspace for local
+# iteration against a source tree ($SPEC_SOURCE_ROOT).
+#
+# NOTE: these deps enlarge the module graph for spec's consumers (Aion, mycelium).
+# Publishing spec@0.6.x with the plugin requires rules_fastverk_plugin to be
+# published to the registry first — the local_path_override below is root-only, so
+# consumers ignore it (same caveat the rules_graphviz override above carries).
+bazel_dep(name = "rules_rust", version = "0.70.0")
+bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+
+# The meridian PanelBundle rule + the uiview schema the bundle compiles against.
+bazel_dep(name = "meridian_web", version = "0.5.0")
+bazel_dep(name = "meridian_schemas", version = "0.5.0")
+
+# The portable fastverk_plugin macro + rust_service_image. Published to the
+# fastverk bazel-registry (github:tomato-bazel/rules_fastverk_plugin @ 0.0.1), so
+# it resolves from the registry like every other module — no override needed.
+bazel_dep(name = "rules_fastverk_plugin", version = "0.0.1")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# crate_universe over the plugin's Cargo workspace. isolate = True keeps spec's
+# universe from colliding with a consumer's.
+crate = use_extension(
+    "@rules_rust//crate_universe:extension.bzl",
+    "crate",
+    isolate = True,
+)
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//services/spec:Cargo.toml",
+    ],
+)
+use_repo(crate, "crates")
