@@ -1,0 +1,13 @@
+{
+  "homepage": "https://github.com/tomato-bazel/rules_astro",
+  "maintainers": [
+    { "name": "Matt Marshall", "github": "mattmarshall" }
+  ],
+  "repository": [
+    "github:tomato-bazel/rules_astro"
+  ],
+  "versions": [
+    "0.0.1"
+  ],
+  "yanked_versions": {}
+}
