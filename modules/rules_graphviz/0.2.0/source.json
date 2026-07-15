@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-Uyw4Ny9HwpITcXQdtkv6y72gcAD/mQ9Biqski/dqQXg=",
+  "strip_prefix": "rules_graphviz-0.2.0",
+  "url": "https://github.com/tomato-bazel/rules_graphviz/archive/refs/tags/v0.2.0.tar.gz"
+}

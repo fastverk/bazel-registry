@@ -1,0 +1,27 @@
+# Bazel rules for rendering Graphviz diagrams — hermetically.
+#
+# The default toolchain runs @hpcc-js/wasm-graphviz (Graphviz compiled to
+# WebAssembly, WASM inlined into a single JS file) under a hermetic bun runtime
+# (rules_bun). No host `dot` required, cross-platform wherever bun runs. Every
+# layout engine (dot/neato/fdp/sfdp/twopi/circo/osage/patchwork) + the
+# structured output formats (svg/dot/json/plain/xdot/…). Native standalone tools
+# (gvpr/gvpack/…) and raster png/pdf are out of scope for the WASM toolchain;
+# register a native toolchain for `//graphviz:toolchain_type` if you need them.
+module(
+    name = "rules_graphviz",
+    version = "0.2.0",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_bun", version = "0.2.0")
+
+# Hermetic bun runtime that drives the WASM renderer.
+bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
+bun.toolchain(version = "1.3.14")
+use_repo(bun, "bun")
+
+register_toolchains(
+    "@bun//:bun_toolchain_def",
+    "//graphviz:graphviz_toolchain_def",
+)
