@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-zysuiLaHuEh/B+2O/Ldbys5ZrbEnGc0x4oyWurEULmY=",
+  "strip_prefix": "rules_lean-0.5.4",
+  "url": "https://github.com/tomato-bazel/rules_lean/archive/refs/tags/v0.5.4.tar.gz"
+}
