@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-U81m4f46arpvmgMbqkZmlLDdu2b/T1oqDNLVcfIc7xk=",
+  "strip_prefix": "rules_lang-0.4.1",
+  "url": "https://github.com/tomato-bazel/rules_lang/archive/refs/tags/v0.4.1.tar.gz"
+}
