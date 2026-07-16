@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/meridian-ux/meridian-chat",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:meridian-ux/meridian-chat"
+  ],
+  "versions": [
+    "0.1.0"
+  ],
+  "yanked_versions": {}
+}
