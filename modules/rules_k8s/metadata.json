@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/tomato-bazel/rules_k8s",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:tomato-bazel/rules_k8s"
+  ],
+  "versions": [
+    "0.0.1"
+  ],
+  "yanked_versions": {}
+}
