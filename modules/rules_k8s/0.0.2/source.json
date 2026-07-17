@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-yPn8nep3tiMLu/ddTo/MXlnTHIB8s3Kjq1WQvtiuRj4=",
+  "strip_prefix": "rules_k8s-0.0.2",
+  "url": "https://github.com/tomato-bazel/rules_k8s/archive/refs/tags/v0.0.2.tar.gz"
+}
