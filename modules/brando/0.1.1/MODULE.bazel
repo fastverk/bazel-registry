@@ -1,0 +1,58 @@
+# brando — the reusable, brand-neutral brand pipeline.
+#
+# brando is the machinery; a brand (fastverk, tomato-bazel, ...) supplies only
+# CONTENT (its mark geometry, palette, fonts, wordmark text, skin textproto) and
+# depends on brando as a Bazel module. One pipeline, many brands:
+#
+#   * marklib — the reusable mark-authoring Python library (shapely CSG helpers,
+#     svgwrite layered-SVG / Icon Composer emission, the Pillow rasterizer) that
+#     a brand's own gen_<mark>.py imports.
+#   * brand_doc — a tectonic .tex -> PDF rule with a TEMPLATED brand LaTeX class
+#     (colors/fonts passed as inputs, so any brand styles its docs identically).
+#   * brand_skin — textpb -> binpb (protoc --encode against meridian's theme.proto)
+#     -> json, the meridian-theme pipeline (brand authors the textproto only).
+#   * brand_icons / brand_wordmark / brand_office / brand_mdbook_theme — packaging
+#     rules + generators parameterized on the brand's palette/fonts/text.
+#
+# Hermetic: generators run in-build as py_binary (rules_python + a pip lock
+# pulling shapely/svgwrite/pillow/fonttools/python-pptx/python-docx wheels).
+module(
+    name = "brando",
+    version = "0.1.1",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "rules_tectonic", version = "0.2.0")
+
+# meridian — brando depends on it ONLY for the theme SCHEMA
+# (@meridian//proto:theme.proto): brand_skin compiles a brand's Theme textproto
+# against it (protoc --encode) into <brand>.binpb/json. brando pulls no renderer
+# code; meridian stays brand-neutral. protobuf provides protoc for the encode.
+#
+# Pinned to the PUBLISHED meridian 0.2.3 (the release that exports theme.proto).
+bazel_dep(name = "meridian", version = "0.2.3")
+bazel_dep(name = "protobuf", version = "33.4")
+
+# ─── tectonic (brand PDFs) ──────────────────────────────────────────
+tectonic = use_extension("@rules_tectonic//tectonic:extensions.bzl", "tectonic")
+use_repo(tectonic, "tectonic")
+
+register_toolchains("@tectonic//:tectonic_toolchain_def")
+
+# ─── hermetic Python (the generators) ───────────────────────────────
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    is_default = True,
+    python_version = "3.12",
+)
+use_repo(python, "python_3_12")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "brando_pip",
+    python_version = "3.12",
+    requirements_lock = "//:requirements.txt",
+)
+use_repo(pip, "brando_pip")
