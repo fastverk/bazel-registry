@@ -85,6 +85,7 @@ rules in tools/readme/categorization_rules.json.
 | [`fastverk-app`](https://github.com/fastverk/fastverk-app) | 0.0.2 | `fastverk/fastverk-app` |
 | [`forge`](https://github.com/fastverk/forge) | 0.0.1 | `fastverk/forge` |
 | [`fvkit`](https://github.com/fastverk/fvkit) | 0.0.9 | `fastverk/fvkit` |
+| [`gate`](https://github.com/tomato-bazel/gate) | 0.0.1 | `tomato-bazel/gate` |
 | [`meridian`](https://github.com/mattmarshall/meridian) | 0.2.6 | `mattmarshall/meridian` |
 | [`meridian_chat`](https://github.com/meridian-ux/meridian-chat) | 0.1.0 | `meridian-ux/meridian-chat` |
 | [`meridian_schemas`](https://github.com/meridian-ux/meridian-schemas) | 0.15.0 | `meridian-ux/meridian-schemas` |

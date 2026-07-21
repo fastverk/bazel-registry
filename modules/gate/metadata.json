@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/tomato-bazel/gate",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:tomato-bazel/gate"
+  ],
+  "versions": [
+    "0.0.1"
+  ],
+  "yanked_versions": {}
+}
