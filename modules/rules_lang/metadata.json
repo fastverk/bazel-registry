@@ -16,7 +16,8 @@
     "0.4.1",
     "0.4.2",
     "0.4.3",
-    "0.4.4"
+    "0.4.4",
+    "0.4.5"
   ],
   "yanked_versions": {
     "0.4.2": "broken: rules/c/rules.bzl cmd string is .format()ed and 0.4.2's bare {HOME:-} is parsed as a format field -> 'Error in format: Missing argument HOME:-'; consumer packages fail to load. Use 0.4.3."
