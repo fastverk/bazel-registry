@@ -191,10 +191,16 @@ target/
 MODULE.bazel.lock
 ";
 
+// registry.tbzl.dev, not registry.fastverk.com: the fleet is consolidating onto
+// the former (fastverk/images#10 makes it entry #1 in the baked
+// //ci:system_bazelrc, with per-repo PRs following across both orgs). Until this
+// template changed, every repo `rels scaffold` minted was born on the legacy URL
+// and immediately needed the migration PR — tomato-bazel/gate was exactly that.
+// All three URLs are CloudFront fronts of the same content, so this is a rename.
 const BAZELRC: &str = "\
 common --enable_bzlmod
 
-common --registry=https://registry.fastverk.com/
+common --registry=https://registry.tbzl.dev/
 common --registry=https://bcr.bazel.build/
 
 test --test_output=errors
@@ -310,7 +316,7 @@ fn readme(args: &Args) -> String {
          `.bazelrc`:\n\
          \n\
          ```\n\
-         common --registry=https://registry.fastverk.com/\n\
+         common --registry=https://registry.tbzl.dev/\n\
          common --registry=https://bcr.bazel.build/\n\
          ```\n\
          \n\
