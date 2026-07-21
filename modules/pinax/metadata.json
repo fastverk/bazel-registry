@@ -1,5 +1,5 @@
 {
-  "homepage": "https://github.com/mattmarshall/pinax",
+  "homepage": "https://github.com/fastverk/pinax",
   "maintainers": [
     {
       "name": "Matt Marshall",
@@ -7,7 +7,7 @@
     }
   ],
   "repository": [
-    "github:mattmarshall/pinax"
+    "github:fastverk/pinax"
   ],
   "versions": [
     "0.1.0"
