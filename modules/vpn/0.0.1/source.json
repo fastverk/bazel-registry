@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-DSEGmUX/QJ7jIs6iUxagsCMyYc6NjXtsiErNfZedCKY=",
   "strip_prefix": "vpn-0.0.1",
-  "url": "https://codeload.github.com/fastverk/vpn/tar.gz/refs/tags/v0.0.1"
+  "url": "https://codeload.github.com/fastverk/vpn/tar.gz/refs/tags/v0.0.1",
+  "archive_type": "tar.gz"
 }

@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-Bt0ysXb4FtC/Rkl2aNeyhhXD8xFnDGI/Sdj3mM1qgd4=",
   "strip_prefix": "pinax-0.1.0",
-  "url": "https://codeload.github.com/mattmarshall/pinax/tar.gz/refs/tags/v0.1.0"
+  "url": "https://codeload.github.com/mattmarshall/pinax/tar.gz/refs/tags/v0.1.0",
+  "archive_type": "tar.gz"
 }

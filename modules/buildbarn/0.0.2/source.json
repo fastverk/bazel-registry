@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-mGvpMcmnXDQ3lCo+3cSqVqFZ1gKKpzGCvlyASWF6qI4=",
   "strip_prefix": "buildbarn-0.0.2",
-  "url": "https://codeload.github.com/fastverk/buildbarn/tar.gz/refs/tags/v0.0.2"
+  "url": "https://codeload.github.com/fastverk/buildbarn/tar.gz/refs/tags/v0.0.2",
+  "archive_type": "tar.gz"
 }

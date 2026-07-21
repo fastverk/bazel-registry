@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-3DkWYQUG37SAApFqd1xkyKpQd7UveLZI+xYKPujoXwM=",
   "strip_prefix": "botnoc-0.1.0",
-  "url": "https://codeload.github.com/fastverk/botnoc/tar.gz/refs/tags/v0.1.0"
+  "url": "https://codeload.github.com/fastverk/botnoc/tar.gz/refs/tags/v0.1.0",
+  "archive_type": "tar.gz"
 }

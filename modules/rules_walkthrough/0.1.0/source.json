@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-1rTjJ5phR5Tq44NRU9UWIh0twyU+6yIY61CwyWObBSk=",
   "strip_prefix": "rules_walkthrough-0.1.0",
-  "url": "https://codeload.github.com/fastverk/rules_walkthrough/tar.gz/refs/tags/v0.1.0"
+  "url": "https://codeload.github.com/fastverk/rules_walkthrough/tar.gz/refs/tags/v0.1.0",
+  "archive_type": "tar.gz"
 }
