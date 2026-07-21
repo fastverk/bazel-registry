@@ -1,0 +1,23 @@
+# rules_tomato — the tomato-bazel foundation module.
+#
+# Three things, on the "how to build one target / one repo" axis (the sibling of
+# rules_ci's project-orchestration axis — `tomato_project` lives there):
+#   1. tomato_* convention macros (tomato_mdbook today; tomato_rust_library
+#      etc. to follow) — //tomato:defs.bzl.
+#   2. the canonical dependency BOM (//bom/versions.json) — the source of truth
+#      the `rels deps` ratchet audits every repo's MODULE.bazel against.
+#   3. the shared .bazelrc snippet (//bazelrc/common.bazelrc) — try-import'd so
+#      the registry chain + flags stop drifting.
+#
+# It deps only what its macros need (kept light); the BOM is a manifest, NOT
+# transitive bazel_deps, so consuming rules_tomato doesn't drag the whole
+# constellation into a consumer's graph.
+module(
+    name = "rules_tomato",
+    version = "0.1.2",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+# tomato_mdbook wraps rules_mdbook + stages the @brand mdBook theme.
+bazel_dep(name = "rules_mdbook", version = "0.3.1")
+bazel_dep(name = "brand", version = "0.2.0")
