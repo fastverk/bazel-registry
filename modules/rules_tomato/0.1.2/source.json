@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-RvRAvefUrt78mIrbW5kh9Oa0AJRLK2pNo/piyx8xLkk=",
+  "strip_prefix": "rules_tomato-0.1.2",
+  "url": "https://github.com/tomato-bazel/rules_tomato/archive/refs/tags/v0.1.2.tar.gz"
+}
