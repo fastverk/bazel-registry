@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-77wzYBv0cHGYRBrhR0KkwGuShJNK5zYdtG9+wdAO04E=",
   "strip_prefix": "decomposer-0.0.1",
-  "url": "https://codeload.github.com/fastverk/decomposer/tar.gz/refs/tags/v0.0.1"
+  "url": "https://codeload.github.com/fastverk/decomposer/tar.gz/refs/tags/v0.0.1",
+  "archive_type": "tar.gz"
 }

@@ -1,5 +1,6 @@
 {
   "integrity": "sha256-rv4pbxzOxK8E8C4Zifk4Ut9n4LdLqxwkw6QF8M2jyh8=",
   "strip_prefix": "rules_runpod-0.0.5",
-  "url": "https://codeload.github.com/fastverk/rules_runpod/tar.gz/refs/tags/v0.0.5"
+  "url": "https://codeload.github.com/fastverk/rules_runpod/tar.gz/refs/tags/v0.0.5",
+  "archive_type": "tar.gz"
 }
