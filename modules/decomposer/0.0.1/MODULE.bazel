@@ -1,0 +1,35 @@
+# Cross-language NL→atomic-claims decomposition toolkit. LLM-driven
+# (Anthropic, OpenAI, Ollama, vLLM, RunPod — anything OpenAI-compatible)
+# with content-addressable claim hashing + canonical normalization so
+# paraphrased inputs land on the same cache key. Consumed today by the
+# agora corpus pipeline; designed to drop into RAG chunking, legal
+# clause decomposition, scientific-paper claim extraction, etc.
+
+module(
+    name = "decomposer",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_java", version = "8.6.1")
+bazel_dep(name = "rules_jvm_external", version = "6.6")
+bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "protobuf", version = "33.4")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "decomposer_maven",
+    artifacts = [
+        "com.fasterxml.jackson.core:jackson-databind:2.17.2",
+        "com.google.guava:guava:33.3.1-jre",
+        # protobuf-java version must match the protobuf module's gencode.
+        "com.google.protobuf:protobuf-java:4.33.4",
+    ],
+    lock_file = "//:maven_install.json",
+)
+use_repo(maven, "decomposer_maven")
+
+# Dev-only.
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
