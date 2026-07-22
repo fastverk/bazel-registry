@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-RoO5bNrb4BaUY8B3RsOzy9JhNai984LvIU+Wax7Y/S8=",
+  "strip_prefix": "rules-v0.5.7-4dcdca6cf9e266b1a649d04f64273ca3231c970b",
+  "url": "https://gitlab.savvifi.com/api/v4/projects/138/packages/generic/bazel-registry/main/modules/rules_aion/0.5.7/source.tar.gz"
+}

@@ -1,0 +1,5 @@
+{
+  "comment": "NOT read by Bazel. Read by the publish-registry CI job, which fetches `archive` from the source repo and re-hosts the bytes into THIS registry's generic package at `package_path` so consumers read only infra/bazel-registry (one project, one auth scope) instead of every source repo. The job verifies the fetched archive's sha256 against the sibling source.json `integrity` before re-hosting.",
+  "archive": "https://gitlab.savvifi.com/api/v4/projects/aion%2Frules/repository/archive.tar.gz?sha=v0.5.0",
+  "package_path": "modules/rules_aion/0.5.0/source.tar.gz"
+}

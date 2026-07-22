@@ -1,0 +1,38 @@
+"""rules_aion — shared Bazel rules for the aion + studio workspaces.
+
+Consolidates the TS-packaging, vitest, db-codegen, migrations-bundle and
+bundler rules that were copy-pasted across aion/lift, platform/studio (and
+their siblings). Consumers load each rule from `@rules_aion//<rule>:defs.bzl`
+and supply their own repo-local drivers/configs/toolchains via attrs, so the
+rule logic lives in exactly one place.
+
+Hosted at gitlab.savvifi.com:aion/rules; consumed via `local_path_override`
+in the savvi meta-workspace today (a savvifi Bazel registry can follow).
+"""
+
+module(
+    name = "rules_aion",
+    version = "0.1.0",
+)
+
+# ─── Runtime deps the rules load from ─────────────────────────────────────────
+# Non-dev: a consumer that loads e.g. `@rules_aion//ts_package:defs.bzl`
+# transitively needs these so the `load("@aspect_rules_js//…")` inside resolve.
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "aspect_rules_js", version = "3.1.2")
+bazel_dep(name = "aspect_rules_ts", version = "3.8.9")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0")  # esbuild_bundle
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")  # copy_to_bin (esbuild shim)
+
+# fastverk/* registry modules (resolved via the fastverk registry in .bazelrc):
+#   rules_vite — vitest_test wraps `@rules_vite//vite:defs.bzl`
+# (Generic Bun bundling lives in fastverk/rules_bun, not here.)
+bazel_dep(name = "rules_vite", version = "0.1.0")
+
+# ─── Dev-only (docs + smoke lint) ─────────────────────────────────────────────
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
+
+# README generation (//:readme) — rules_readme from the fastverk registry.
+bazel_dep(name = "rules_readme", version = "0.0.3")
