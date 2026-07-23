@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-Xae0qeDrOD68R1M965uUVeFsu2UG+vdi8dxxjPByki0=",
+  "strip_prefix": "rules_ci-0.3.0",
+  "url": "https://github.com/tomato-bazel/rules_ci/archive/refs/tags/v0.3.0.tar.gz"
+}
