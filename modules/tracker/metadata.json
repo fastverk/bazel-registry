@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/fastverk/tracker",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:fastverk/tracker"
+  ],
+  "versions": [
+    "0.0.1"
+  ],
+  "yanked_versions": {}
+}
