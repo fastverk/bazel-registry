@@ -10,7 +10,8 @@
     "github:tomato-bazel/rules_schema_org"
   ],
   "versions": [
-    "0.0.1"
+    "0.0.1",
+    "0.0.3"
   ],
   "yanked_versions": {}
 }

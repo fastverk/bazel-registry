@@ -10,7 +10,8 @@
     "github:tomato-bazel/rules_huggingface"
   ],
   "versions": [
-    "0.0.3"
+    "0.0.3",
+    "0.0.4"
   ],
   "yanked_versions": {}
 }
