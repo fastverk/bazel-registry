@@ -1,0 +1,110 @@
+# Registry admission gating, as a ratchet.
+#
+# WHY THIS EXISTS. Nothing here ran on `pull_request` — ratchet.yml, report.yml
+# and conformance.yml are all weekly cron — so a module version could be
+# published and nothing looked at it until the following Monday, and then only
+# as a report. That is how 135 findings accrued across 300-odd published
+# versions: `rels release` computes the integrity itself and it was never
+# re-verified. The cost showed up as reactive yanking (rules_cc_host 0.1.0,
+# rules_lang 0.4.2) — both failures a graph invariant catches at publish time.
+#
+# WHY A RATCHET, NOT A GATE. The corpus is not green. Demanding zero before
+# enforcing anything would mean enforcing nothing until a remediation campaign
+# finishes, while more findings accrue — which is precisely how it got here.
+# So this fails a PR only if it makes some invariant WORSE than the base.
+# The registry stops getting worse today, and each invariant becomes a real
+# `sparql_query_test` in tomato-bazel/gate the moment its count reaches zero.
+#
+# HOW. The gates live in tomato-bazel/gate: it projects a registry checkout to
+# RDF and runs one SPARQL query per invariant, where a non-empty result set IS
+# the counterexample. We project this PR and its base with the same pinned gate,
+# then diff the per-gate counts.
+name: conformance ratchet
+
+on:
+  pull_request:
+    # Only a change to the registry contents can move a counter. Skip docs and
+    # workflow-only PRs rather than spending two Bazel builds proving nothing.
+    paths:
+      - "modules/**"
+      - "bazel_registry.json"
+      - ".github/workflows/gate-ratchet.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-ratchet-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # PINNED, not `main`. An unpinned gate means a change over there can turn
+  # every PR here red without anyone touching this repo. Bump deliberately —
+  # a bump that moves a counter will show up as a regression on its own PR,
+  # which is the correct place to look at it.
+  GATE_REF: 3c173056a7a9e8cf123f4b101076b5b2eafeadc6
+
+jobs:
+  ratchet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the registry (PR merge commit + base)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Two registry trees: what this PR proposes, and what main has today.
+      # `git worktree` rather than a second clone so both come from the same
+      # object store and the base is exactly the PR's merge base.
+      - name: Materialise head and base registry trees
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/reg
+          git worktree add /tmp/reg/head HEAD
+          git worktree add /tmp/reg/base "${{ github.event.pull_request.base.sha }}"
+          echo "head modules: $(ls /tmp/reg/head/modules | wc -l)"
+          echo "base modules: $(ls /tmp/reg/base/modules | wc -l)"
+
+      - name: Check out the gate
+        uses: actions/checkout@v4
+        with:
+          repository: tomato-bazel/gate
+          ref: ${{ env.GATE_REF }}
+          path: _gate
+
+      - uses: bazel-contrib/setup-bazel@0.10.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      # --vendor is load-bearing, not optional: without the vendored upstream
+      # closure every third-party module resolves as a LEAF, MVS under-selects,
+      # and the C-family gates only see atoms our own modules name directly.
+      # --allow-unresolved because the registry legitimately contains an
+      # unresolvable module (metadata.json with every version yanked) — that is
+      # what S6 reports, not a reason to fail before we can report it.
+      #
+      # Both sides are projected by the SAME gate revision, so a difference in
+      # the counts can only come from the registry contents.
+      - name: Project and report — base, then head
+        working-directory: _gate
+        run: |
+          set -euo pipefail
+          for side in base head; do
+            bazel run //crates/gate-rdf:project -- \
+              "/tmp/reg/$side" "$PWD/gates/testdata/registry.ttl" \
+              --vendor "$PWD/vendor/bcr" --allow-unresolved
+            bazel build //gates:report
+            cp bazel-bin/gates/report.binpb "/tmp/$side.binpb"
+            chmod u+w "/tmp/$side.binpb"
+          done
+
+      - name: Ratchet
+        working-directory: _gate
+        run: |
+          set -euo pipefail
+          bazel run //crates/gate-report:gate-ratchet -- \
+            --base /tmp/base.binpb \
+            --head /tmp/head.binpb \
+            --summary "$GITHUB_STEP_SUMMARY"
