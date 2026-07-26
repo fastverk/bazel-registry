@@ -1,0 +1,97 @@
+# Bazel-native HuggingFace Hub toolchain. Data-plane rules
+# (hf_upload / hf_repo / hf_download) drive a hermetic `hf` CLI
+# resolved through `//huggingface:toolchain_type`; the control-plane
+# (hf_inference_endpoint) is generated from the vendored Inference
+# Endpoints OpenAPI spec (Phase 2). `hf_model` is a typed repo ref.
+module(
+    name = "rules_huggingface",
+    version = "0.0.4",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+# Public: the data-plane runners are sh_binary wrappers, so consumers
+# need rules_shell in their module graph.
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+# The hermetic `hf` CLI is the `huggingface_hub` console script,
+# served from a pinned pip hub through a py_console_script_binary.
+# No system `hf` / `uvx` shim — the data-plane protocol (LFS + Xet +
+# the commit endpoint) is bespoke client logic that only
+# huggingface_hub implements, so we vendor the binary rather than
+# codegen it.
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+# ─── Control plane: typed Inference Endpoints client (Phase 2) ────
+# The HF Inference Endpoints REST API is a clean OpenAPI surface, so
+# the `hf_inference_endpoint` rule drives a typed Rust client
+# codegen'd by rules_openapi (progenitor) from the vendored spec —
+# tighter than shelling to `hf endpoints`.
+#
+# This carried a local_path_override onto ../rules_openapi — a dev convenience
+# that shipped. It resolves from the registry now; verified by building //...
+# with no override in play. Use --override_module in a gitignored .bazelrc.user
+# for sibling-checkout development, so it cannot be published again.
+bazel_dep(name = "rules_openapi", version = "0.2.1")
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+# Dev-only.
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
+
+# ─── Rust toolchain + crate universe for the endpoints client/CLI ──
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+# One isolated universe for BOTH the progenitor-generated client and
+# the wrapper CLI, so the async/HTTP stack (tokio + reqwest) is a
+# single instance — avoids the trait-identity mismatch a split
+# universe would cause. Versions match rules_openapi's progenitor
+# runtime contract (progenitor-client 0.14 / reqwest 0.13 / regress
+# 0.11).
+crate = use_extension(
+    "@rules_rust//crate_universe:extension.bzl",
+    "crate",
+    isolate = True,
+)
+crate.spec(package = "progenitor-client", version = "=0.14.0")
+crate.spec(default_features = False, features = ["json", "rustls", "stream"], package = "reqwest", version = "0.13")
+crate.spec(package = "regress", version = "0.11")
+crate.spec(features = ["derive"], package = "serde", version = "1.0")
+crate.spec(package = "serde_json", version = "1.0")
+# Format crates the progenitor output references — same universe as
+# serde so the date-time/uuid/bytes serde impls resolve correctly.
+crate.spec(features = ["serde"], package = "chrono", version = "0.4")
+crate.spec(features = ["serde", "v4"], package = "uuid", version = "1")
+crate.spec(features = ["serde"], package = "bytes", version = "1")
+crate.spec(package = "anyhow", version = "1.0")
+crate.spec(features = ["derive", "env"], package = "clap", version = "4.5")
+crate.spec(features = ["full"], package = "tokio", version = "1.42")
+crate.from_specs(name = "hf_crates")
+use_repo(crate, "hf_crates")
+
+# ─── Hermetic Python + the `hf` CLI ───────────────────────────────
+# `is_default` only takes effect when rules_huggingface is the root
+# module (standalone dev); as a dependency the consumer's default
+# toolchain wins, and this 3.12 toolchain coexists for the pip hub.
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.12",
+    is_default = True,
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "hf_pypi",
+    python_version = "3.12",
+    requirements_lock = "//huggingface:requirements_lock.txt",
+)
+use_repo(pip, "hf_pypi")
+
+# Default `hf` toolchain. A consumer can register its own (pinning a
+# different huggingface_hub version) before this one to override.
+register_toolchains("//huggingface:hf_default_toolchain")
