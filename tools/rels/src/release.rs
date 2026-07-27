@@ -250,7 +250,8 @@ fn upsert_metadata(module_dir: &Path, repo: &str, version: &str) -> Result<()> {
             homepage: format!("https://github.com/{}", repo),
             maintainers: vec![Maintainer {
                 name: "Matt Marshall".to_string(),
-                github: "mattmarshall".to_string(),
+                github: Some("mattmarshall".to_string()),
+                email: None,
             }],
             repository: vec![format!("github:{}", repo)],
             versions: Vec::new(),

@@ -171,10 +171,36 @@ pub struct ModuleMetadata {
     pub yanked_versions: serde_json::Map<String, serde_json::Value>,
 }
 
+/// A maintainer entry in `metadata.json`.
+///
+/// BOTH contact fields are optional, and both have to be, for different reasons.
+///
+/// `github` was required, and `modules/rules_aion/metadata.json` legitimately
+/// has none — that module is GitLab-hosted (`gitlab.savvifi.com/aion/rules`), so
+/// a GitHub handle is semantically wrong for it rather than merely missing. Because
+/// `ModuleMetadata::read` propagates a parse error and `RegistryModule::load_all`
+/// forwards it with `?`, that ONE file took out every subcommand that enumerates
+/// the registry — `audit`, `matrix`, and the MCP `list_modules` tool — and had
+/// done since `19705ff` registered rules_aion. `audit` is the only thing that
+/// covers tag<->registry drift, so the blast radius was larger than it looked.
+///
+/// `email` is modelled for the opposite reason: it is the contact method that
+/// file actually carries. Making only `github` optional would convert a loud
+/// crash into silent data loss, because `write` reserialises the whole struct —
+/// the first `rels release` touching rules_aion would drop the address on the
+/// floor.
+///
+/// `skip_serializing_if` on both keeps a round-trip byte-identical: without it
+/// every publish writes `"email": null` into 78 files and `"github": null` into
+/// one. Field order is deliberate — serde emits in declaration order, so
+/// `name, github, email` reproduces both existing shapes exactly.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Maintainer {
     pub name: String,
-    pub github: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
 }
 
 impl ModuleMetadata {
@@ -333,4 +359,90 @@ pub fn remote_tags(checkout: &Path) -> Result<Vec<String>> {
         }
     }
     Ok(tags)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ModuleMetadata;
+
+    /// The two maintainer shapes that actually exist in the registry: 78 modules
+    /// carry `{name, github}` and `modules/rules_aion/metadata.json` carries
+    /// `{name, email}` because it is GitLab-hosted.
+    ///
+    /// Both must round-trip BYTE-IDENTICALLY, because `rels release` reserialises
+    /// the whole struct on every publish. Three separate things make that true and
+    /// each fails differently if dropped:
+    ///
+    ///   * `github: Option` — without it `read` errors, and `load_all` forwards
+    ///     the error, so one GitLab-hosted module takes out `audit`/`matrix`/MCP
+    ///     for the entire registry. That is the bug this test exists for.
+    ///   * `email: Option` — without it, parsing rules_aion succeeds but writing
+    ///     it back silently DELETES the address. A quiet data loss is worse than
+    ///     the loud crash it replaced.
+    ///   * `skip_serializing_if` — without it every publish writes `"email": null`
+    ///     into 78 files and `"github": null` into one.
+    ///
+    /// Field order matters too: serde emits in declaration order, so `Maintainer`
+    /// must declare `name, github, email` for both shapes below to survive.
+    const GITHUB_SHAPE: &str = r#"{
+  "homepage": "https://github.com/tomato-bazel/rules_graphviz",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:tomato-bazel/rules_graphviz"
+  ],
+  "versions": [
+    "0.2.0"
+  ],
+  "yanked_versions": {}
+}
+"#;
+
+    const EMAIL_SHAPE: &str = r#"{
+  "homepage": "https://gitlab.savvifi.com/aion/rules",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "email": "mmarshall@savvifi.com"
+    }
+  ],
+  "repository": [
+    "https://gitlab.savvifi.com/aion/rules"
+  ],
+  "versions": [
+    "0.6.0"
+  ],
+  "yanked_versions": {}
+}
+"#;
+
+    fn round_trip(src: &str) -> String {
+        let meta: ModuleMetadata = serde_json::from_str(src).expect("parse");
+        let mut out = serde_json::to_string_pretty(&meta).expect("serialize");
+        out.push('\n');
+        out
+    }
+
+    #[test]
+    fn github_shape_round_trips_byte_identically() {
+        assert_eq!(GITHUB_SHAPE, round_trip(GITHUB_SHAPE));
+    }
+
+    #[test]
+    fn gitlab_hosted_email_shape_round_trips_byte_identically() {
+        // The regression that broke `rels audit` from 19705ff until this fix.
+        assert_eq!(EMAIL_SHAPE, round_trip(EMAIL_SHAPE));
+    }
+
+    #[test]
+    fn an_absent_contact_field_is_omitted_not_nulled() {
+        let out = round_trip(EMAIL_SHAPE);
+        assert!(!out.contains("null"), "absent field was serialized as null:\n{out}");
+        assert!(!out.contains("\"github\""), "github key leaked into a GitLab entry");
+        assert!(out.contains("mmarshall@savvifi.com"), "email was dropped");
+    }
 }
