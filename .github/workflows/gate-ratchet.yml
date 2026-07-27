@@ -47,12 +47,21 @@ env:
   #
   # Bump in its OWN PR whenever the gate diff touches crates/**, gates/*.rq,
   # gates/declarations.ttl or vendor/bcr/** — those are the only four things that
-  # can move a count. 3c17305..7d06b7b touches none of them: it adds
-  # ENFORCED_ON_REGISTRY (S4 as a real sparql_query_test, which runs in gate's
-  # own CI and is not in //gates:report's dependency closure) and refreshes
-  # gate's committed projection, which the step below overwrites before anything
-  # reads it. Provably a no-op for these counts, so it rides along here.
-  GATE_REF: 7d06b7bfc153c78b8789a760359707fe9fab3f57
+  # can move a count. The previous bump (3c17305..7d06b7b) touched none of them
+  # and rode along with a workflow change; this one touches two, so it rides
+  # alone.
+  #
+  # 0c07789 is gate PR #4. The change that moves a number: D3 never read
+  # gate:extDev, so it flagged repo names on dev_dependency extension usages —
+  # usages dropped from every module graph but the module's own, whose repos are
+  # therefore in no consumer's graph and cannot collide with anything. 8 of 38
+  # findings were never real. D3 38 -> 30.
+  #
+  # THE RATCHET CANNOT SHOW YOU THIS. Both base and head are projected by the
+  # same ref, so a query change shifts both sides equally and never registers as
+  # a regression. That is the argument for a dedicated PR, not against needing
+  # one: this is the only place a gate change is ever visible.
+  GATE_REF: 0c0778949b3f88dfe94e87de664092bb177ef067
 
 jobs:
   ratchet:
