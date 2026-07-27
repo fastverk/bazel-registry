@@ -22,13 +22,15 @@
 name: conformance ratchet
 
 on:
+  # NO `paths:` FILTER, DELIBERATELY. Only a change to the registry contents can
+  # move a counter, but a path-filtered workflow that does not match is SKIPPED,
+  # and a skipped workflow never creates its check run at all. A branch
+  # protection rule requiring this check would then sit on "Expected" for ever on
+  # any PR that missed the filter — including, with some irony, the PR that
+  # removed the filter. The filter now lives INSIDE the job (see `scope` below):
+  # the check always reports, and a PR that touches nothing the gates can see
+  # goes green in about five seconds instead of twelve minutes fifty.
   pull_request:
-    # Only a change to the registry contents can move a counter. Skip docs and
-    # workflow-only PRs rather than spending two Bazel builds proving nothing.
-    paths:
-      - "modules/**"
-      - "bazel_registry.json"
-      - ".github/workflows/gate-ratchet.yml"
 
 permissions:
   contents: read
@@ -42,10 +44,23 @@ env:
   # every PR here red without anyone touching this repo. Bump deliberately —
   # a bump that moves a counter will show up as a regression on its own PR,
   # which is the correct place to look at it.
-  GATE_REF: 3c173056a7a9e8cf123f4b101076b5b2eafeadc6
+  #
+  # Bump in its OWN PR whenever the gate diff touches crates/**, gates/*.rq,
+  # gates/declarations.ttl or vendor/bcr/** — those are the only four things that
+  # can move a count. 3c17305..7d06b7b touches none of them: it adds
+  # ENFORCED_ON_REGISTRY (S4 as a real sparql_query_test, which runs in gate's
+  # own CI and is not in //gates:report's dependency closure) and refreshes
+  # gate's committed projection, which the step below overwrites before anything
+  # reads it. Provably a no-op for these counts, so it rides along here.
+  GATE_REF: 7d06b7bfc153c78b8789a760359707fe9fab3f57
 
 jobs:
   ratchet:
+    # EXPLICIT, because this string verbatim IS the check-run name and therefore
+    # the required-status-check context on main. Without it the check is named
+    # after the job id — `ratchet` — which says nothing, and is the same job id
+    # that ratchet.yml's weekly dep-ratchet already uses.
+    name: gate conformance ratchet
     runs-on: ubuntu-latest
     steps:
       - name: Check out the registry (PR merge commit + base)
@@ -53,10 +68,60 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The former `paths:` filter, as a step. `pull_request` checks out
+      # refs/pull/N/merge, so base.sha..HEAD IS the PR's net diff — and it is the
+      # same base.sha the worktree step below already relies on being present.
+      #
+      # The list is exactly the projector's input surface (see
+      # gate/crates/bzlmod/src/registry.rs): bazel_registry.json and
+      # modules/<name>/{metadata.json,<version>/{MODULE.bazel,source.json}}.
+      # tools/rels/** is NOT in it, on purpose: rels writes into modules/, but a
+      # PR that changes only rels leaves modules/ byte-identical, so both sides
+      # project the same RDF and every count is unchanged by construction.
+      # Guarding rels is a cargo test's job, not this one's.
+      - name: Does this PR touch anything the gates project?
+        id: scope
+        run: |
+          set -euo pipefail
+          base='${{ github.event.pull_request.base.sha }}'
+          paths=(modules bazel_registry.json .github/workflows/gate-ratchet.yml)
+          # `git diff --quiet` exits 1 when there IS a difference; a command in
+          # an `if` condition is exempt from errexit, a bare call would not be.
+          if git diff --quiet "$base" HEAD -- "${paths[@]}"; then
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No change under ${paths[*]} — nothing to project."
+          else
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only "$base" HEAD -- "${paths[@]}"
+          fi
+
+      # Only on the short-circuit path, and only in its own step: gate-ratchet's
+      # --summary does an fs::write, i.e. it TRUNCATES $GITHUB_STEP_SUMMARY, so
+      # anything written before it ran would be silently discarded.
+      - name: Summary — nothing to project
+        if: steps.scope.outputs.relevant != 'true'
+        run: |
+          set -euo pipefail
+          {
+            echo '## Registry conformance'
+            echo
+            echo 'Not projected: this PR changes nothing the gates can see.'
+            echo
+            echo 'The projector reads `bazel_registry.json` and `modules/**` and'
+            echo 'nothing else. This PR touches neither, so both sides of the'
+            echo 'ratchet would produce byte-identical RDF and every per-gate'
+            echo 'count would be unchanged — about 12m40s of Bazel to prove a'
+            echo 'tautology.'
+            echo
+            echo "Base: \`${{ github.event.pull_request.base.sha }}\`"
+            echo "Gate: \`${GATE_REF}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Two registry trees: what this PR proposes, and what main has today.
       # `git worktree` rather than a second clone so both come from the same
       # object store and the base is exactly the PR's merge base.
       - name: Materialise head and base registry trees
+        if: steps.scope.outputs.relevant == 'true'
         run: |
           set -euo pipefail
           mkdir -p /tmp/reg
@@ -66,13 +131,17 @@ jobs:
           echo "base modules: $(ls /tmp/reg/base/modules | wc -l)"
 
       - name: Check out the gate
+        if: steps.scope.outputs.relevant == 'true'
         uses: actions/checkout@v4
         with:
           repository: tomato-bazel/gate
           ref: ${{ env.GATE_REF }}
           path: _gate
 
+      # Guarding this one is not cosmetic: skipping a `uses:` step also skips its
+      # post-step, which here is the ~22s cache save.
       - uses: bazel-contrib/setup-bazel@0.10.0
+        if: steps.scope.outputs.relevant == 'true'
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -88,6 +157,7 @@ jobs:
       # Both sides are projected by the SAME gate revision, so a difference in
       # the counts can only come from the registry contents.
       - name: Project and report — base, then head
+        if: steps.scope.outputs.relevant == 'true'
         working-directory: _gate
         run: |
           set -euo pipefail
@@ -101,6 +171,7 @@ jobs:
           done
 
       - name: Ratchet
+        if: steps.scope.outputs.relevant == 'true'
         working-directory: _gate
         run: |
           set -euo pipefail
