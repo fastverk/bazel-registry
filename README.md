@@ -17,7 +17,6 @@ rules in tools/readme/categorization_rules.json.
 | Module | Latest | Repository |
 |---|---|---|
 | [`rules_agentic_ide`](https://github.com/tomato-bazel/rules_agentic_ide) | 0.0.4 | `tomato-bazel/rules_agentic_ide` |
-| [`rules_ci_ir`](https://github.com/tomato-bazel/rules_ci_ir) | 0.0.1 | `tomato-bazel/rules_ci_ir` |
 | [`rules_lang`](https://github.com/tomato-bazel/rules_lang) | 0.4.5 | `tomato-bazel/rules_lang` |
 | [`rules_lean`](https://github.com/tomato-bazel/rules_lean) | 0.5.5 | `tomato-bazel/rules_lean` |
 | [`rules_spec`](https://github.com/fastverk/rules_spec) | 0.5.1 | `fastverk/rules_spec` |
@@ -26,7 +25,6 @@ rules in tools/readme/categorization_rules.json.
 
 | Module | Latest | Repository |
 |---|---|---|
-| [`rules_meridian`](https://github.com/mattmarshall/meridian) | 0.2.1 | `mattmarshall/meridian` |
 | [`rules_storybook`](https://github.com/tomato-bazel/rules_storybook) | 0.2.0 | `tomato-bazel/rules_storybook` |
 | [`rules_vite`](https://github.com/tomato-bazel/rules_vite) | 0.1.1 | `tomato-bazel/rules_vite` |
 | [`rules_walkthrough`](https://github.com/fastverk/rules_walkthrough) | 0.1.0 | `fastverk/rules_walkthrough` |
@@ -38,7 +36,6 @@ rules in tools/readme/categorization_rules.json.
 |---|---|---|
 | [`rules_autoconf`](https://github.com/tomato-bazel/rules_autoconf) | 0.1.0 | `tomato-bazel/rules_autoconf` |
 | [`rules_cloudformation`](https://github.com/tomato-bazel/rules_cloudformation) | 0.8.0 | `tomato-bazel/rules_cloudformation` |
-| [`rules_docker`](https://github.com/fastverk/rules_docker_compose) | 0.2.6 | `fastverk/rules_docker_compose` |
 | [`rules_github`](https://github.com/tomato-bazel/rules_github) | 0.1.2 | `tomato-bazel/rules_github` |
 | [`rules_gitlab`](https://github.com/tomato-bazel/rules_gitlab) | 0.3.4 | `tomato-bazel/rules_gitlab` |
 | [`rules_nextjs`](https://github.com/tomato-bazel/rules_nextjs) | 0.3.0 | `tomato-bazel/rules_nextjs` |
@@ -52,12 +49,12 @@ rules in tools/readme/categorization_rules.json.
 | Module | Latest | Repository |
 |---|---|---|
 | [`rules_beam`](https://github.com/tomato-bazel/rules_beam) | 0.0.2 | `tomato-bazel/rules_beam` |
-| [`rules_huggingface`](https://github.com/tomato-bazel/rules_huggingface) | 0.0.3 | `tomato-bazel/rules_huggingface` |
+| [`rules_huggingface`](https://github.com/tomato-bazel/rules_huggingface) | 0.0.4 | `tomato-bazel/rules_huggingface` |
 | [`rules_jena`](https://github.com/tomato-bazel/rules_jena) | 0.3.2 | `tomato-bazel/rules_jena` |
 | [`rules_jsonschema`](https://github.com/tomato-bazel/rules_jsonschema) | 0.3.0 | `tomato-bazel/rules_jsonschema` |
 | [`rules_puml`](https://github.com/tomato-bazel/rules_puml) | 0.0.2 | `tomato-bazel/rules_puml` |
 | [`rules_rdf`](https://github.com/tomato-bazel/rules_rdf) | 0.4.0 | `tomato-bazel/rules_rdf` |
-| [`rules_schema_org`](https://github.com/tomato-bazel/rules_schema_org) | 0.0.1 | `tomato-bazel/rules_schema_org` |
+| [`rules_schema_org`](https://github.com/tomato-bazel/rules_schema_org) | 0.0.3 | `tomato-bazel/rules_schema_org` |
 
 ### Language and Build Tooling
 
@@ -67,7 +64,7 @@ rules in tools/readme/categorization_rules.json.
 | [`rules_bun`](https://github.com/tomato-bazel/rules_bun) | 0.4.0 | `tomato-bazel/rules_bun` |
 | [`rules_cc_cross`](https://github.com/tomato-bazel/rules_cc_cross) | 0.1.0 | `tomato-bazel/rules_cc_cross` |
 | [`rules_chrome`](https://github.com/tomato-bazel/rules_chrome) | 0.1.1 | `tomato-bazel/rules_chrome` |
-| [`rules_lora`](https://github.com/tomato-bazel/rules_lora) | 0.1.3 | `tomato-bazel/rules_lora` |
+| [`rules_lora`](https://github.com/tomato-bazel/rules_lora) | 0.1.4 | `tomato-bazel/rules_lora` |
 | [`rules_mdbook`](https://github.com/tomato-bazel/rules_mdbook) | 0.3.1 | `tomato-bazel/rules_mdbook` |
 | [`rules_meson`](https://github.com/tomato-bazel/rules_meson) | 0.0.1 | `tomato-bazel/rules_meson` |
 | [`rules_ssh_tui`](https://github.com/tomato-bazel/rules_ssh_tui) | 0.0.5 | `tomato-bazel/rules_ssh_tui` |
@@ -83,21 +80,21 @@ rules in tools/readme/categorization_rules.json.
 | [`buildbarn`](https://github.com/fastverk/buildbarn) | 0.0.2 | `fastverk/buildbarn` |
 | [`decomposer`](https://github.com/fastverk/decomposer) | 0.0.1 | `fastverk/decomposer` |
 | [`fastverk-app`](https://github.com/fastverk/fastverk-app) | 0.0.2 | `fastverk/fastverk-app` |
-| [`forge`](https://github.com/fastverk/forge) | 0.0.3 | `fastverk/forge` |
+| [`forge`](https://github.com/fastverk/forge) | 0.0.6 | `fastverk/forge` |
 | [`fvkit`](https://github.com/fastverk/fvkit) | 0.0.9 | `fastverk/fvkit` |
 | [`gate`](https://github.com/tomato-bazel/gate) | 0.0.1 | `tomato-bazel/gate` |
 | [`meridian`](https://github.com/mattmarshall/meridian) | 0.2.6 | `mattmarshall/meridian` |
 | [`meridian_chat`](https://github.com/meridian-ux/meridian-chat) | 0.1.0 | `meridian-ux/meridian-chat` |
-| [`meridian_schemas`](https://github.com/meridian-ux/meridian-schemas) | 0.17.0 | `meridian-ux/meridian-schemas` |
-| [`meridian_tui`](https://github.com/meridian-ux/meridian-tui) | 0.4.0 | `meridian-ux/meridian-tui` |
-| [`meridian_uiview_core`](https://github.com/meridian-ux/meridian-uiview-core) | 0.4.0 | `meridian-ux/meridian-uiview-core` |
-| [`meridian_web`](https://github.com/meridian-ux/meridian-web) | 0.5.0 | `meridian-ux/meridian-web` |
+| [`meridian_schemas`](https://github.com/meridian-ux/meridian-schemas) | 0.19.0 | `meridian-ux/meridian-schemas` |
+| [`meridian_tui`](https://github.com/meridian-ux/meridian-tui) | 0.5.0 | `meridian-ux/meridian-tui` |
+| [`meridian_uiview_core`](https://github.com/meridian-ux/meridian-uiview-core) | 0.6.0 | `meridian-ux/meridian-uiview-core` |
+| [`meridian_web`](https://github.com/meridian-ux/meridian-web) | 0.12.0 | `meridian-ux/meridian-web` |
 | [`pinax`](https://github.com/fastverk/pinax) | 0.1.0 | `fastverk/pinax` |
 | [`rules_aion`](https://gitlab.savvifi.com/aion/rules) | 0.6.0 | `gitlab.savvifi.com/aion/rules` |
 | [`rules_aip`](https://github.com/tomato-bazel/rules_aip) | 0.2.2 | `tomato-bazel/rules_aip` |
 | [`rules_astro`](https://github.com/tomato-bazel/rules_astro) | 0.0.1 | `tomato-bazel/rules_astro` |
 | [`rules_cc_host`](https://github.com/tomato-bazel/rules_cc_host) | 0.1.0 | `tomato-bazel/rules_cc_host` |
-| [`rules_ci`](https://github.com/tomato-bazel/rules_ci) | 0.2.0 | `tomato-bazel/rules_ci` |
+| [`rules_ci`](https://github.com/tomato-bazel/rules_ci) | 0.3.0 | `tomato-bazel/rules_ci` |
 | [`rules_docker_compose`](https://github.com/tomato-bazel/rules_docker_compose) | 0.2.6 | `tomato-bazel/rules_docker_compose` |
 | [`rules_eslint`](https://github.com/tomato-bazel/rules_eslint) | 0.1.0 | `tomato-bazel/rules_eslint` |
 | [`rules_fastverk`](https://github.com/tomato-bazel/rules_fastverk) | 0.0.3 | `tomato-bazel/rules_fastverk` |
@@ -115,8 +112,9 @@ rules in tools/readme/categorization_rules.json.
 | [`rules_tomato`](https://github.com/tomato-bazel/rules_tomato) | 0.1.2 | `tomato-bazel/rules_tomato` |
 | [`rules_vscode`](https://github.com/tomato-bazel/rules_vscode) | 0.0.2 | `tomato-bazel/rules_vscode` |
 | [`rules_xsd`](https://github.com/tomato-bazel/rules_xsd) | 0.0.1 | `tomato-bazel/rules_xsd` |
-| [`spec`](https://github.com/fastverk/spec) | 0.6.0 | `fastverk/spec` |
+| [`spec`](https://github.com/fastverk/spec) | 0.6.3 | `fastverk/spec` |
 | [`tomato_brand`](https://github.com/tomato-bazel/brand) | 0.0.1 | `tomato-bazel/brand` |
+| [`tracker`](https://github.com/fastverk/tracker) | 0.0.4 | `fastverk/tracker` |
 | [`vpn`](https://github.com/fastverk/vpn) | 0.0.1 | `fastverk/vpn` |
 | [`wave`](https://github.com/fastverk/wave) | 0.0.1 | `fastverk/wave` |
 
