@@ -333,7 +333,11 @@ fn tool_list_modules(env: &Env) -> Result<String, McpError> {
             .metadata
             .maintainers
             .first()
-            .map(|x| format!("{} (@{})", x.name, x.github))
+            .map(|x| match (&x.github, &x.email) {
+                (Some(gh), _) => format!("{} (@{})", x.name, gh),
+                (None, Some(em)) => format!("{} <{}>", x.name, em),
+                (None, None) => x.name.clone(),
+            })
             .unwrap_or_else(|| "—".to_string());
         out.push_str(&format!(
             "## {}\n- homepage: {}\n- maintainer: {}\n- versions: {}\n\n",
