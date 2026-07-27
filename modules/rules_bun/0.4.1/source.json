@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-C4KdZFgzKbHzf91soJsOKwNLevpZVHUHeSv97fHY/QY=",
+  "strip_prefix": "rules_bun-0.4.1",
+  "url": "https://github.com/tomato-bazel/rules_bun/archive/refs/tags/v0.4.1.tar.gz"
+}
