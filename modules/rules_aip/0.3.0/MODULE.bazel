@@ -1,0 +1,30 @@
+# Bazel rules for Google AIP (https://aip.dev) proto linting.
+#
+# Centralizes the api-linter toolchain + a reusable `aip_proto_lint` test rule
+# and an `aip_proto_library` macro (bundles the standard googleapis AIP deps),
+# replacing the per-repo `tools/api-linter` copy + hand-rolled lint genrule.
+#
+# Named for the domain, scoped to the AIP toolkit — protovalidate / buf-breaking
+# / gateway generation can join later without a rename.
+module(
+    name = "rules_aip",
+    version = "0.3.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "googleapis", version = "0.0.0-20260422-20ac242a")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+# api-linter is the upstream prebuilt release binary, fetched per-platform as a
+# sha256-pinned http_archive (no Go toolchain / build-from-source). See
+# //aip:extensions.bzl. Offline after the first download.
+api_linter = use_extension("//aip:extensions.bzl", "api_linter")
+use_repo(
+    api_linter,
+    "rules_aip_api_linter_darwin_amd64",
+    "rules_aip_api_linter_darwin_arm64",
+    "rules_aip_api_linter_linux_amd64",
+    "rules_aip_api_linter_windows_amd64",
+)
