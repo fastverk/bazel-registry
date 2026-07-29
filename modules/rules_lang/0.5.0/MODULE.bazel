@@ -1,0 +1,69 @@
+module(
+    name = "rules_lang",
+    version = "0.5.0",
+)
+
+# Public rules layer only — the engine + AST source stay private in GitLab
+# aion/polyglot. The Lean atlas arrives as a prebuilt, per-arch olean fetched
+# from this repo's GitHub release assets (see //lean:atlas.bzl). Consumers
+# resolve rules_lang anonymously, with no private-source access.
+bazel_dep(name = "rules_lean", version = "0.5.5")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# //rules/c — the C/clang AST-dump + LLVM-IR + struct-diff rule definitions
+# (consumed by rules_postgres' Gate 3). These need the cc toolchain, a shell
+# test rule, and the python CLI helpers. The heavy Rust diff/IR tools
+# (//crates/pipeline) stay private in aion/polyglot — only the rule defs live
+# here, so a consumer that does not instantiate the Gate-3 rules resolves the
+# loads with no private-engine access.
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+# //proto + //tools/emit — the cross-repo emit boundary (polyglot.emit.v1
+# TranslationManifest). The proto chain (lir/lir_codec/emit) + the Python
+# manifest packer let producers publish Lean-rendered source that consumers
+# (aion/lift's aion_ts_package, aion/sql) decode with no Lean toolchain.
+bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "protobuf", version = "33.4")
+
+# Reference docs (stardoc) — dev-only.
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
+
+# Hermetic Lean toolchain pinned to the version the atlas olean was built with
+# (leanprover/lean4:v4.30.0-rc2) — Lean rejects a mismatched olean at load.
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+
+# Dep-free: the lakefile declares no `require`s, so there is nothing to fetch or
+# build — rules_lean emits just the toolchain. NO `allow_source_build`: it only
+# gates rules_lean's `lake build <pkg>` fallback, and with zero packages there is
+# nothing for it to build. It was previously True purely to make the nominal
+# batteries `require` resolve, which cost ~200 source-built modules per cold fetch.
+lake.workspace(
+    name = "rules_lang_lake",
+    lake_manifest = "//lean:lake-manifest.json",
+    lakefile = "//lean:lakefile.lean",
+    lean_toolchain = "//lean:lean-toolchain",
+)
+use_repo(lake, "rules_lang_lake")
+
+# dev_dependency: this toolchain builds rules_lang's OWN Lean targets, it is not
+# part of rules_lang's surface. Registration is EAGER — Bazel loads the registered
+# toolchain's package to read its `toolchain_type`, which runs the `lake_workspace`
+# repository rule — and a non-dev registration propagates to every transitive
+# consumer. So a pure-Rust build in a repo that merely `bazel_dep`s on rules_lang
+# materialized @rules_lang_lake (Lean toolchain fetch + extraction) before it could
+# analyze anything, and no `--config=lean`-style opt-in on the consumer side can
+# suppress a registration made inside a dependency module.
+#
+# Dev registrations STILL APPLY when rules_lang is the ROOT module, so this repo's
+# own //lean/... targets are unaffected. Same reasoning rules_lean and spec document.
+register_toolchains(
+    "@rules_lang_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)
+
+# Per-arch polyglot atlas oleans, fetched from this repo's GitHub releases.
+atlas = use_extension("//lean:atlas.bzl", "atlas_ext")
+use_repo(atlas, "polyglot_atlas_darwin_arm64", "polyglot_atlas_linux_x86_64")
