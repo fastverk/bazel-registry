@@ -1,0 +1,47 @@
+module(
+    name = "pgquery",
+    version = "17.6.0",
+)
+
+# Version tracks the Postgres release modelled. This module mirrors libpg_query's
+# `pg_query.proto` — Postgres's own parse-node taxonomy — so it moves when
+# libpg_query does, and libpg_query releases are themselves keyed to a Postgres
+# major (`17-6.2.2`).
+#
+# ⚠ A CONVENTION, not an enforced constraint. `compatibility_level` was the
+# mechanism that would have made bzlmod refuse a build mixing Postgres majors, and
+# Bazel 9 made it a no-op, so it is not set. See pgcatalog's MODULE.bazel for the
+# two candidate enforcement mechanisms, neither built yet.
+
+bazel_dep(name = "rules_lean", version = "0.6.1")
+bazel_dep(name = "rules_cc", version = "0.0.17")
+
+# `Pg/Query/Top.lean` imports `Pg.Catalog.Tables` — for `ArgMode` alone, the
+# proc-param direction enum. That single import is why pgquery sits above
+# pgcatalog in the graph rather than beside it.
+bazel_dep(name = "pgcatalog", version = "17.6.1")
+
+# Non-dev: `//tools/pgpb_to_lean_ast` is a C decoder built against libpg_query's
+# protobuf-c bindings, and it is part of this module's surface — it is what turns
+# parsed SQL into the `Pg.Query.Top` shapes the Lean side consumes. A consumer
+# using the Lean types without the decoder is possible but unusual, so the
+# libpg_query dependency is not gated dev-only.
+bazel_dep(name = "rules_postgres", version = "0.12.0")
+
+pg = use_extension("@rules_postgres//postgres:extensions.bzl", "pg")
+pg.query(version = "17-6.2.2")
+use_repo(pg, "libpg_query")
+
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "pgquery_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "pgquery_lake")
+
+register_toolchains(
+    "@pgquery_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)
