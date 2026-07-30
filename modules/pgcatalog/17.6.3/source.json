@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-AXR7wXb757GW7Fd5V5VKRuaFt/B2GZ3g4xBvttwSvaI=",
+  "strip_prefix": "pgcatalog-17.6.3",
+  "url": "https://github.com/leangres/pgcatalog/archive/refs/tags/v17.6.3.tar.gz"
+}
