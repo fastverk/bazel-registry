@@ -12,7 +12,7 @@ in the savvi meta-workspace today (a savvifi Bazel registry can follow).
 
 module(
     name = "rules_aion",
-    version = "0.7.2",
+    version = "0.7.3",
 )
 
 # ─── Runtime deps the rules load from ─────────────────────────────────────────
