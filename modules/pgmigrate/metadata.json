@@ -10,7 +10,8 @@
     "github:leangres/pgmigrate"
   ],
   "versions": [
-    "17.6.0"
+    "17.6.0",
+    "17.6.1"
   ],
   "yanked_versions": {}
 }

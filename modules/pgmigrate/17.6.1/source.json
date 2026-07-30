@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-gD2cMWIjn7tgDXIDhAhvPC6Yg9D4C56WGaByzZ2KkuU=",
+  "strip_prefix": "pgmigrate-17.6.1",
+  "url": "https://github.com/leangres/pgmigrate/archive/refs/tags/v17.6.1.tar.gz"
+}
