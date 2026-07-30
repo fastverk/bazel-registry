@@ -12,7 +12,7 @@ in the savvi meta-workspace today (a savvifi Bazel registry can follow).
 
 module(
     name = "rules_aion",
-    version = "0.7.1",
+    version = "0.7.2",
 )
 
 # ─── Runtime deps the rules load from ─────────────────────────────────────────
@@ -30,7 +30,24 @@ bazel_dep(name = "rules_helm", version = "0.1.0")  # savvi_helm_chart (//helm)
 # operators had copy-pasted. Versions match the root workspace so the resolved graph
 # does not fork. rules_go is deliberately absent — see the note in operator/defs.bzl.
 bazel_dep(name = "rules_oci", version = "2.2.6")
-bazel_dep(name = "rules_pkg", version = "1.2.0")
+
+# 1.0.1, NOT the root workspace's 1.2.0, and the difference is the point.
+#
+# A LIBRARY declares the MINIMUM it needs and lets MVS raise it; matching a
+# consumer's pin is what a root module does. This module uses rules_pkg for
+# exactly one symbol — `pkg_tar` in operator/defs.bzl — which 1.0.1 has, so
+# aion's own graph still resolves 1.2.0 (MVS takes the max) and nothing forks
+# there either way.
+#
+# Declaring 1.2.0 here forked the REGISTRY instead. 23 registered modules pin
+# rules_pkg 1.0.1; publishing one at 1.2.0 made rules_aion the only dissenter,
+# and registry conformance C1 — "one live version per third-party atom" —
+# went 29 -> 30 and failed the 0.7.1 registration PR. C1 compares MVS results
+# across every module graph in the registry, and its own header explains the
+# stakes: since Bazel 8.6.0/9.1.0 `compatibility_level` is a no-op, so MVS will
+# silently upgrade a consumer across a breaking change and Bazel cannot object.
+# One version per atom is the only thing standing in the way.
+bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "protobuf", version = "34.0.bcr.1")
 bazel_dep(name = "aspect_rules_js", version = "3.1.2")

@@ -24,7 +24,7 @@
     "0.5.8",
     "0.6.0",
     "0.7.0",
-    "0.7.1"
+    "0.7.2"
   ],
   "yanked_versions": {
     "0.7.0": "broken: unfetchable in two independent layers. This registry entry named https://github.com/savvifi/aion/releases/download/aion-toolchain-v0.7.0/rules_aion-0.7.0.tar.gz, and savvifi/aion is PRIVATE, where that friendly releases/download form returns a flat 404 with zero redirects \u2014 with or without a bearer token that can read the repo. Fixing only the URL is not enough: 0.7.0's own aion_toolchain/repository.bzl omits `type` in download_and_extract, so the toolchain artifact then downloads, verifies integrity, and fails extraction with \"Expected a file with a .tar.gz suffix\" \u2014 which reads like a corrupt artifact rather than a missing argument. Both are fixed in 0.7.1, published under the api.github.com asset endpoint with archive_type set. Use 0.7.1."
