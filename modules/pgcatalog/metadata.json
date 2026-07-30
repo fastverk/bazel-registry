@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/leangres/pgcatalog",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:leangres/pgcatalog"
+  ],
+  "versions": [
+    "17.6.1"
+  ],
+  "yanked_versions": {}
+}
