@@ -1,0 +1,16 @@
+{
+  "homepage": "https://github.com/leangres/sqlast",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:leangres/sqlast"
+  ],
+  "versions": [
+    "0.1.0"
+  ],
+  "yanked_versions": {}
+}

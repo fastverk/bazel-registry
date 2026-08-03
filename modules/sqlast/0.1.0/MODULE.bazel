@@ -1,0 +1,39 @@
+module(
+    name = "sqlast",
+    version = "0.1.0",
+    compatibility_level = 1,
+)
+
+# Lean toolchain. 0.6.1 is the first release whose `lean_olean_archive` works on
+# linux — before it, the rule tarred the import root with `-h` and GNU tar exited
+# 1 reading through the bazel-out symlink farm, so publishing worked on macOS and
+# failed on every linux/RBE build.
+bazel_dep(name = "rules_lean", version = "0.6.1")
+
+# Dep-free Lake workspace: `Polyglot.Sql.Ast` imports NOTHING, and Render +
+# SqlSmoke import only it, so this module needs Lean core and nothing else. Keep
+# it that way — a nominal `require batteries` elsewhere in this ecosystem cost
+# ~15 minutes on every CI run that pulled the module in, and mathlib's own
+# post-update hook has repeatedly defeated attempts to tree-shake it.
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "sqlast_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "sqlast_lake")
+
+# dev_dependency, deliberately. Toolchain registration is EAGER: Bazel loads the
+# registered toolchain's package to read its `toolchain_type`, which runs the
+# `lake_workspace` repository rule. Non-dev, that propagates to every transitive
+# consumer — a pure-Rust build in a repo that merely `bazel_dep`s on this one
+# would materialize a ~2.5 GB Lean distribution it never uses, and a consumer
+# cannot suppress a registration made inside a dependency.
+#
+# Dev registrations still apply when this is the ROOT module, so this repo's own
+# //lean targets are unaffected.
+register_toolchains(
+    "@sqlast_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)

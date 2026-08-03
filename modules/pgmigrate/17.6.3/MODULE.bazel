@@ -1,0 +1,35 @@
+module(
+    name = "pgmigrate",
+    version = "17.6.3",
+)
+
+# Version tracks the Postgres release modelled. A convention, not enforced —
+# `compatibility_level` would have been the mechanism and Bazel 9 made it a no-op.
+# See pgcatalog's MODULE.bazel for the two candidate enforcement mechanisms.
+
+bazel_dep(name = "rules_lean", version = "0.6.1")
+
+# `Fold` folds a parsed DDL stream into a catalog snapshot, so it needs both the
+# catalog model and the parse-tree shapes. This module sits at the top of the
+# leangres graph; everything else is below it.
+bazel_dep(name = "pgcatalog", version = "17.6.4")
+bazel_dep(name = "pgquery", version = "17.6.0")
+
+# `step` consumes the EMITTER-side `Pg.Stmt.Stmt`, where `Fold` consumes the
+# parser-side `Pg.Query.Top.TopStmt`. Both directions are wanted: `Fold` ingests
+# what Postgres parsed, `step` validates what we are about to emit.
+bazel_dep(name = "pgast", version = "17.6.2")
+
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "pgmigrate_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "pgmigrate_lake")
+
+register_toolchains(
+    "@pgmigrate_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)

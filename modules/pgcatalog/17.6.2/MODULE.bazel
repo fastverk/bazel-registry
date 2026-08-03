@@ -1,0 +1,63 @@
+module(
+    name = "pgcatalog",
+    version = "17.6.2",
+)
+
+# Version tracks the Postgres release this models, not an independent semver.
+# `Generated.lean` is rendered from PG 17.6's own `src/include/catalog/*.dat`
+# bootstrap files, so the model only describes 17.6.
+#
+# ⚠ This is a CONVENTION, not an enforced constraint, and 17.6.0 claimed
+# otherwise. That release carried `compatibility_level = 17` with a comment saying
+# bzlmod would refuse to resolve a build mixing Postgres majors. **It would not.**
+# Bazel 9 made `compatibility_level` a no-op — `bazel mod graph` says so outright
+# ("The attribute 'compatibility_level' in module() is a no-op and will be removed
+# in a future Bazel release") — so the attribute bought nothing but a warning on
+# every build, while the comment asserted a guarantee that did not exist.
+# Attribute dropped; 17.6.0 was never published, so nothing depended on the claim.
+#
+# What this means in practice: a consumer CAN resolve `pgcatalog 17.6.x` alongside
+# a hypothetical `pgast 18.0.x` and nothing will complain at resolution. The
+# mismatch would surface as a Lean type error if the shapes moved — or not at all,
+# as a silently wrong catalog.
+#
+# Enforcement is therefore still owed. The two candidates, neither built yet:
+#   * a registry gate invariant — `tomato-bazel/gate` already ratchets exactly this
+#     shape of cross-module property (C1 is "one live version per third-party
+#     atom"); "all pg-versioned leangres modules in a graph agree on major.minor"
+#     is the same kind of claim, checked where the ecosystem already checks;
+#   * a Lean-level constant per pg-versioned module plus a consumer-side agreement
+#     test, so a mismatch fails the build by computation.
+
+bazel_dep(name = "rules_lean", version = "0.6.1")
+
+# Dep-free Lake workspace. The catalog model imports Lean core and nothing else.
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "pgcatalog_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "pgcatalog_lake")
+
+# Eager registration would materialize a ~2.5 GB Lean distribution in every
+# transitive consumer, and a consumer cannot suppress a registration made inside
+# a dependency. Dev registrations still apply when this is the ROOT module.
+register_toolchains(
+    "@pgcatalog_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)
+
+# dev_dependency: needed ONLY by the .dat round-trip gate, which reads Postgres's
+# own bootstrap catalog files out of the pinned source tree. Consumers of the
+# catalog model do not need Postgres source, so they must not inherit this.
+bazel_dep(name = "rules_postgres", version = "0.12.0", dev_dependency = True)
+
+pg = use_extension(
+    "@rules_postgres//postgres:extensions.bzl",
+    "pg",
+    dev_dependency = True,
+)
+pg.source(version = "17.6")
+use_repo(pg, "postgres_src")
