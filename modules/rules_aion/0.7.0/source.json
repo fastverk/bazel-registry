@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-40ocPWlpxGqwfDQO9iaXBb3k2aS+A21fUYcM5HsT2uU=",
+  "strip_prefix": "rules_aion-0.7.0/rules",
+  "url": "https://github.com/savvifi/aion/releases/download/aion-toolchain-v0.7.0/rules_aion-0.7.0.tar.gz"
+}

@@ -1,0 +1,168 @@
+module(
+    name = "rules_postgres",
+    version = "0.12.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_cc", version = "0.0.17")
+
+# Shared GitHub-release fetching infrastructure (used by
+# postgres/extensions.bzl to pull libpg_query archive tags).
+bazel_dep(name = "rules_github", version = "0.1.1")
+
+# Non-dev: postgres/defs.bzl's `pg_parse_valid_test` loads `@rules_shell`
+# at consumer-side load time, so consumers must be able to resolve it.
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+# Hermetic meson + ninja toolchain for `pg_meson_configure` (see
+# postgres/meson.bzl). The general-purpose machinery lives in
+# rules_meson; rules_postgres consumes its `meson_configure` rule and
+# wraps it with PG-specific option defaults + the pg_config.h overlay
+# pre-removal list.
+bazel_dep(name = "rules_meson", version = "0.0.1")
+
+# Lean toolchain. Used by `lean/Pg/*` — the typed PG AST + emit
+# infrastructure that lands here under the PgAst extraction (see
+# ~/Documents/rfcs/narrative/pgast-extraction-{proposal,review,
+# response,phase1-plan,phase1-ack}.md for the full decision trail).
+# Phase 1 (PgTy + PgAst + PgPretty + Catalog/* + tools/catalog_gen/)
+# moves on or after 2026-06-01; the scaffolding here lands first as
+# empty stubs + a smoke test so the receiving wiring is proven before
+# any content arrives.
+bazel_dep(name = "rules_lean", version = "0.6.1")
+
+# Minimal Lake workspace pinning the Lean toolchain. Dep-free: Phase 1
+# modules (PgTy + PgAst + PgPretty + Catalog/*) import only Lean core, and
+# rules_lean >= 0.5.1 accepts a zero-package workspace (the lake_workspace
+# dep-free path), so the old nominal `require batteries` is gone — it was
+# never imported, and source-building it cost ~15 min on every CI run that
+# pulled rules_postgres in. Add real requires here + in tools/lake/lakefile.lean
+# when later phases pull in mathlib/cslib.
+# Toolchain version must match Aion's tools/lake/lean-toolchain.
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "rules_postgres_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "rules_postgres_lake")
+
+# dev_dependency: this toolchain builds rules_postgres's OWN Lean targets, it is
+# not part of rules_postgres's surface — consumers take the postgres/SQL rules and
+# register their own Lean toolchain. Registration is EAGER: Bazel loads the
+# registered toolchain's package to read its `toolchain_type`, which runs the
+# `lake_workspace` repository rule. Non-dev, that propagates to every transitive
+# consumer, so a pure-Rust build in a repo that merely `bazel_dep`s on
+# rules_postgres materialized @rules_postgres_lake before analyzing anything — and
+# a consumer cannot suppress a registration made inside a dependency module.
+#
+# Dev registrations STILL APPLY when rules_postgres is the ROOT module, so this
+# repo's own //lean/... targets are unaffected. Same shape as the
+# `@rust_toolchains//:all` registration below, and what rules_lean and spec do.
+register_toolchains(
+    "@rules_postgres_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)
+
+# rules_lang — the public rules layer. Provides:
+#   * @rules_lang//lean:atlas — Polyglot.* as prebuilt, toolchain-matched
+#     oleans (v4.30.0-rc2). Replaces the former @polyglot_ast Sql/Ast source
+#     include; Pg.Ast's Pattern-A `Ext` slot consumes it (see //lean:BUILD).
+#   * @rules_lang//rules/c — the C/clang AST-dump + struct-diff rule defs that
+#     back Gate 3. The heavy Rust diff tools (//crates/pipeline) stay private
+#     in aion/polyglot, so Gate 3 is dev-only here; the rule loads still
+#     resolve for the rest of the build.
+# Public registry (was: premium-private rules_lang + polyglot_ast).
+# 0.3.0 — the atlas gained a generic `Polyglot.Sql.Ast.Stmt` (+ Java);
+# Pg.Stmt's pretty-printer hides it (see lean/Pg/Pretty.lean). Pinned here
+# so rules_postgres CI tests against the same atlas its consumers
+# (aion/sql, aion/lean) force via single_version_override — they now force
+# 0.4.4, so this tracks them. (The atlas olean itself is tied to a fixed
+# `atlas-v*` release, not the module version, so this does not move it.)
+# 0.4.4 also drops rules_lang's nominal batteries `require` — the same
+# ~200-module source build this repo's own lakefile removed at 0.5.1.
+bazel_dep(name = "rules_lang", version = "0.4.4")
+
+# rules_lora — Bazel-native LoRA fine-tuning. Used by Pg.Ir's
+# local-model fine-tune track: the Stream A LLM-authoring loop's
+# corpus (17 clusters × 230 fns at tools/corpus_extract/) feeds
+# directly into rules_lora's `messages_v1` SFT schema. The goal is
+# a small local model that authors Pg.Ir Lean specs, removing the
+# hosted-LLM dependency.
+bazel_dep(name = "rules_lora", version = "0.0.1", dev_dependency = True)
+
+# Dev-only: only loaded by docs/BUILD.bazel.
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
+
+# Dev-only: rules_rust drives Gate 2 (cluster behavioral diff-test) —
+# every cluster registers a rust_library + cc_library under //rust:
+# (c_oracle) + rust_test pair. Consumers of rules_postgres don't run
+# these tests, so the whole rules_rust surface is gated dev-only.
+bazel_dep(name = "rules_rust", version = "0.70.0", dev_dependency = True)
+
+rust = use_extension(
+    "@rules_rust//rust:extensions.bzl",
+    "rust",
+    dev_dependency = True,
+)
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains(
+    "@rust_toolchains//:all",
+    dev_dependency = True,
+)
+
+# crate_universe: provides proptest (and any future test-only deps).
+#
+# NOT isolated, deliberately. `isolate` separates MULTIPLE usages of the same
+# extension WITHIN one module; we have exactly one, and `use_repo(crate, "crates")`
+# already binds @crates into THIS module's namespace — a sibling repo's `crates`
+# lives in its own namespace and cannot collide. So isolate bought nothing, and it
+# cost every consumer: it is still an experimental parameter, so bazel refuses to
+# even execute this MODULE.bazel unless the ROOT module passes
+# --experimental_isolated_extension_usages. That broke aion/sql's CI outright
+# ("Error computing the main repository mapping: rules_postgres@0.8.0"), and is a
+# tax this module has no business levying on its dependents.
+crate = use_extension(
+    "@rules_rust//crate_universe:extension.bzl",
+    "crate",
+    dev_dependency = True,
+)
+crate.spec(
+    package = "proptest",
+    version = "1",
+)
+
+# bumpalo: arena allocator backing pg_palloc's MemoryContext adapter.
+crate.spec(
+    package = "bumpalo",
+    version = "3",
+)
+
+# libc: pg_macaddr / pg_tid / pg_uuid src/lib.rs call libc::memcmp etc.
+crate.spec(
+    package = "libc",
+    version = "0.2",
+)
+crate.from_specs(name = "crates")
+use_repo(crate, "crates")
+
+# libpg_query backs the user-facing `pg_parse_valid_test` macro + the
+# public `parse_check` / `plpgsql_to_json` binaries under //tools, so it
+# must resolve for downstream consumers — keep it non-dev. The full
+# Postgres source tree is only needed by the pg_meson_configure example
+# under examples/meson_smoke, so it stays dev-only.
+pg = use_extension("//postgres:extensions.bzl", "pg")
+pg.query(version = "17-6.2.2")
+use_repo(pg, "libpg_query")
+
+pg_dev = use_extension("//postgres:extensions.bzl", "pg", dev_dependency = True)
+pg_dev.source(version = "17.6")
+use_repo(pg_dev, "postgres_src")

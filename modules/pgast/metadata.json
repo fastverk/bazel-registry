@@ -1,0 +1,18 @@
+{
+  "homepage": "https://github.com/leangres/pgast",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:leangres/pgast"
+  ],
+  "versions": [
+    "17.6.0",
+    "17.6.1",
+    "17.6.2"
+  ],
+  "yanked_versions": {}
+}

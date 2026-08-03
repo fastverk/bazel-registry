@@ -1,0 +1,19 @@
+{
+  "homepage": "https://github.com/leangres/pgmigrate",
+  "maintainers": [
+    {
+      "name": "Matt Marshall",
+      "github": "mattmarshall"
+    }
+  ],
+  "repository": [
+    "github:leangres/pgmigrate"
+  ],
+  "versions": [
+    "17.6.0",
+    "17.6.1",
+    "17.6.2",
+    "17.6.3"
+  ],
+  "yanked_versions": {}
+}

@@ -1,0 +1,77 @@
+module(
+    name = "rules_bun",
+    version = "0.4.1",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# Shared GitHub-release fetching infrastructure (used by bun/extensions.bzl).
+bazel_dep(name = "rules_github", version = "0.1.1")
+
+# `bun_run` macro emits a sh_binary that escapes the sandbox to run
+# Bun scripts against the live workspace. Consumers need rules_shell
+# loadable to expand the macro, so it's a regular (non-dev) bazel_dep.
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+# `bun_bundle` / `bun_compile` wrap the shared `bun-build-driver.mjs` in a
+# `js_library` (so a consumer's `driver` js_binary can use it as a cross-package
+# entry_point) and run that driver as a build action — aspect_rules_js
+# materializes the driver's full linked node_modules into the action runfiles.
+# Consumers must already depend on aspect_rules_js (+ a node toolchain) to
+# declare the driver js_binary, so it's a regular (non-dev) bazel_dep.
+bazel_dep(name = "aspect_rules_js", version = "3.1.2")
+
+# Dev-only: only loaded by docs/BUILD.bazel.
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
+
+# Dev-only end-to-end smoke: a tiny pnpm workspace exercising `bun_bundle`
+# (with an npm dep, a local module, and an `external`) and a host `bun_compile`.
+# Consumers bring their own aspect_rules_js + rules_nodejs; none of this is
+# visible to them.
+bazel_dep(name = "rules_nodejs", version = "6.7.4", dev_dependency = True)
+
+node = use_extension(
+    "@rules_nodejs//nodejs:extensions.bzl",
+    "node",
+    dev_dependency = True,
+)
+node.toolchain(node_version = "22.11.0")
+
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    dev_dependency = True,
+)
+npm.npm_translate_lock(
+    name = "examples_npm",
+    pnpm_lock = "//examples:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "examples_npm")
+
+bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
+bun.toolchain(version = "1.3.14")
+use_repo(bun, "bun")
+
+register_toolchains(
+    "@bun//:bun_toolchain_def",
+    dev_dependency = True,
+)
+
+# Dev-only end-to-end smoke for the PURE-BUN flow (no aspect_rules_js, no
+# pnpm-lock): `bun_deps.install` stages node_modules from the example's
+# package.json + bun.lock, consumed by //examples/install's bun_bundle +
+# bun_test. This is the proof the bun_install flow works end-to-end.
+bun_deps = use_extension(
+    "@rules_bun//bun:extensions.bzl",
+    "bun_deps",
+    dev_dependency = True,
+)
+bun_deps.install(
+    name = "install_npm",
+    lock = "//examples/install:bun.lock",
+    package_json = "//examples/install:package.json",
+)
+use_repo(bun_deps, "install_npm")

@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-t6tdojnJUBe7y0mIAmoNF6P3MS07Da1q+ct2zhZMkZc=",
+  "strip_prefix": "rules_postgres-0.12.0",
+  "url": "https://github.com/tomato-bazel/rules_postgres/archive/refs/tags/v0.12.0.tar.gz"
+}

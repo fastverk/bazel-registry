@@ -1,0 +1,51 @@
+module(
+    name = "pgast",
+    version = "17.6.0",
+)
+
+# Version tracks the Postgres release modelled: `PgType` enumerates Postgres's type
+# names and `ExprExt` its operators, both of which move between majors.
+#
+# ⚠ A CONVENTION, not an enforced constraint. `compatibility_level` was the
+# mechanism that would have made bzlmod refuse a build mixing Postgres majors, and
+# Bazel 9 made it a no-op — it now only prints a deprecation warning, so it is not
+# set here. A consumer can resolve `pgast 17.6.x` next to a future
+# `pgcatalog 18.0.x` and resolution will not complain.
+#
+# Enforcement is owed. See pgcatalog's MODULE.bazel for the two candidates: a
+# registry gate invariant, or a per-module Lean version constant checked by a
+# consumer-side agreement test.
+
+bazel_dep(name = "rules_lean", version = "0.6.1")
+
+# The dialect-neutral SQL AST. `Pg/Ast.lean` does
+# `abbrev Expr := Polyglot.Sql.Ast.Expr ExprExt` — this module supplies only the
+# `Ext` slot and the Postgres-specific constructors.
+#
+# Note what is NOT here: `rules_lang`. Its `//lean:atlas` also ships
+# `Polyglot.Sql.*`, so depending on both would put two providers of one module
+# namespace in the same dep closure. Taking sqlast and not rules_lang avoids that
+# by construction rather than by negotiating a rules_lang release.
+bazel_dep(name = "sqlast", version = "0.1.0")
+
+# The catalog model. `Pg/Ast.lean` uses `Pg.Catalog.QualifiedName` as its
+# `Identifier`, so the same value works as an emit input and as a key into a
+# `Pg.Catalog.Snapshot`.
+bazel_dep(name = "pgcatalog", version = "17.6.1")
+
+lake = use_extension("@rules_lean//lean:lake.bzl", "lake")
+lake.workspace(
+    name = "pgast_lake",
+    lake_manifest = "//tools/lake:lake-manifest.json",
+    lakefile = "//tools/lake:lakefile.lean",
+    lean_toolchain = "//tools/lake:lean-toolchain",
+)
+use_repo(lake, "pgast_lake")
+
+# Eager registration would materialize a ~2.5 GB Lean distribution in every
+# transitive consumer, and a consumer cannot suppress a registration made inside a
+# dependency. Dev registrations still apply when this is the ROOT module.
+register_toolchains(
+    "@pgast_lake//:lean_toolchain_def",
+    dev_dependency = True,
+)
