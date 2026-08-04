@@ -1,0 +1,28 @@
+"""rules_helm — chart-as-a-module: build, lint, and publish Helm charts in Bazel.
+
+The Helm analog of how this org already does images (rules_oci) and proto. A
+`helm_chart` target packages a chart directory into a versioned `.tgz` as a
+build action; `helm_lint` validates it; `helm_push` publishes the `.tgz` to an
+OCI Helm repo. Helm itself is fetched hermetically (pinned per-platform binary
+from get.helm.sh), so a `bazel build` of a chart needs nothing on the host.
+
+Resolution: the fastverk private bazel-registry (see .bazelrc). Published via the
+`rels` tool like the other rules_* modules.
+"""
+
+module(
+    name = "rules_helm",
+    version = "0.2.0",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# Hermetic Helm CLI. The extension downloads the pinned helm binary for the host
+# platform and exposes it as `@helm//:helm`; the rules consume it via the
+# `//helm:helm_bin` alias. Bump the version + checksums in helm/repositories.bzl.
+helm = use_extension("//helm:extensions.bzl", "helm")
+use_repo(helm, "helm")
+
+# Dev-only: the smoke example + stardoc.
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
