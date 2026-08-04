@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-nfhDMEqg4nHz/xF+tgVA0rSeLSU1KboSjPJZGfTMI8w=",
+  "strip_prefix": "rules_helm-0.2.0",
+  "url": "https://github.com/tomato-bazel/rules_helm/archive/refs/tags/v0.2.0.tar.gz"
+}
