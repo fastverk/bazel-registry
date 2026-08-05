@@ -66,7 +66,9 @@ pub fn run(env: &Env, args: Args) -> Result<()> {
         bail!("either --repo, or both --url and --name, is required");
     }
 
-    let name = match (&args.name, &args.repo) {
+    // Provisional only — used for messages until the tarball tells us the real
+    // name. See the note on `declared_module_name` below.
+    let provisional = match (&args.name, &args.repo) {
         (Some(n), _) => n.clone(),
         (None, Some(r)) => repo_basename(r)?,
         (None, None) => unreachable!(),
@@ -91,6 +93,41 @@ pub fn run(env: &Env, args: Args) -> Result<()> {
         }
     };
 
+    eprintln!("fetching {} ...", url);
+    let tarball = fetch(&url)?;
+    let integrity = sri_integrity(&tarball);
+    let module_bazel = extract_module_bazel(&tarball, &strip_prefix)?;
+
+    // THE DIRECTORY MUST BE THE MODULE NAME, NOT THE REPO NAME.
+    //
+    // Bazel resolves a dependency by looking up `modules/<module name>/<version>/`,
+    // where the module name is what MODULE.bazel declares. The repo basename is
+    // usually the same and so this went unnoticed, but it is not the same whenever
+    // a repo is hyphenated: meridian-ux/meridian-schemas declares
+    // `module(name = "meridian_schemas")`. Defaulting to the basename wrote
+    // `modules/meridian-schemas/`, a tree Bazel never looks in — no error, no
+    // warning, just a version that stays unresolvable. meridian_schemas 0.20.0
+    // through 0.24.0 sat tagged and unpublished for exactly this reason.
+    //
+    // The tarball is already in hand and already parsed, so take the name from
+    // the source of truth rather than guessing it from the URL.
+    let name = match (&args.name, declared_module_name(&module_bazel)) {
+        (Some(explicit), Some(declared)) if explicit != &declared => bail!(
+            "--name {:?} disagrees with the module's own declaration {:?}; \
+             the registry directory must be the DECLARED name or Bazel will \
+             never find it",
+            explicit,
+            declared,
+        ),
+        (Some(explicit), _) => explicit.clone(),
+        (None, Some(declared)) => declared,
+        (None, None) => bail!(
+            "could not read `module(name = ...)` out of {}'s MODULE.bazel; \
+             pass --name explicitly",
+            provisional,
+        ),
+    };
+
     let version_dir = env.modules_dir().join(&name).join(&args.version);
     if version_dir.exists() && !args.force {
         bail!(
@@ -101,11 +138,6 @@ pub fn run(env: &Env, args: Args) -> Result<()> {
                 .display(),
         );
     }
-
-    eprintln!("fetching {} ...", url);
-    let tarball = fetch(&url)?;
-    let integrity = sri_integrity(&tarball);
-    let module_bazel = extract_module_bazel(&tarball, &strip_prefix)?;
 
     fs::create_dir_all(&version_dir)
         .with_context(|| format!("mkdir {}", version_dir.display()))?;
@@ -133,6 +165,40 @@ pub fn run(env: &Env, args: Args) -> Result<()> {
     );
     eprintln!("  integrity: {}", integrity);
     Ok(())
+}
+
+/// The `name` a MODULE.bazel declares, which is what Bazel resolves against.
+///
+/// Deliberately line-oriented rather than a full parse: it skips comments (a
+/// module docstring routinely contains the word "module(") and reads the first
+/// `name = "..."` inside the `module(...)` call.
+fn declared_module_name(module_bazel: &str) -> Option<String> {
+    let mut in_call = false;
+    for line in module_bazel.lines() {
+        let t = line.trim();
+        if t.starts_with('#') {
+            continue;
+        }
+        if !in_call {
+            if t.starts_with("module(") {
+                in_call = true;
+            } else {
+                continue;
+            }
+        }
+        if let Some(i) = t.find("name") {
+            let after = &t[i..];
+            if let Some(q1) = after.find('"') {
+                if let Some(q2) = after[q1 + 1..].find('"') {
+                    return Some(after[q1 + 1..q1 + 1 + q2].to_string());
+                }
+            }
+        }
+        if t.contains(')') {
+            break;
+        }
+    }
+    None
 }
 
 fn repo_basename(repo: &str) -> Result<String> {
