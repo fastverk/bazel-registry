@@ -1,5 +1,5 @@
 {
-  "homepage": "https://github.com/mattmarshall/brando",
+  "homepage": "https://github.com/mattmarshall/rules_brand",
   "maintainers": [
     {
       "name": "Matt Marshall",
@@ -7,14 +7,10 @@
     }
   ],
   "repository": [
-    "github:mattmarshall/brando"
+    "github:mattmarshall/rules_brand"
   ],
   "versions": [
-    "0.0.1",
-    "0.1.0",
-    "0.1.1",
-    "0.2.0",
-    "0.3.0"
+    "0.1.0"
   ],
   "yanked_versions": {}
 }

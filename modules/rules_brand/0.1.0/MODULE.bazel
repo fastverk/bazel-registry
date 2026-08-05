@@ -1,0 +1,15 @@
+"""rules_brand — wear a brand, without building one.
+
+Deliberately dependency-free. Every dependency added here lands in the graph of
+every repo that wants a stylesheet and a favicon, which is the exact problem this
+module exists to remove: before it, a repo that merely used a brand had to be a
+brand PIPELINE — shapely, Pillow, pip, a Python toolchain and a generator.
+
+The producing side lives in `brando`, which has all of those and should.
+"""
+
+module(
+    name = "rules_brand",
+    version = "0.1.0",
+    compatibility_level = 1,
+)
