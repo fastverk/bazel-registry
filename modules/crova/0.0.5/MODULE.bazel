@@ -1,0 +1,117 @@
+"""crova — the unified content-addressed store.
+
+One store; REAPI, the truss depot, and git are APIs onto it. See docs/design.md
+for the thesis, and docs/performance.md for the numbers that constrain it.
+
+This module is CONSUMED BY OTHER MODULES (roma, truss), which drives two choices
+below that would be over-engineering in a leaf repo:
+
+  * the crate_universe repo is NAMESPACED (`crova_crates`), not `crates`;
+  * every `register_toolchains` is `dev_dependency = True`.
+
+Both exist so that depending on crova imposes nothing on the consumer beyond the
+store itself.
+
+NO PROTO TOOLING HERE, DELIBERATELY. The CAS wire contract lives in
+//proto/crova/cas/v1, but its generated Rust is CHECKED IN
+(crates/crova-proto/src/crova.cas.v1.rs) and regenerated out-of-band by
+`cargo run -p protogen`, the same way roma handles roma.build.v1. So the Bazel
+target is a plain rust_library and this module needs no rules_proto, no
+protobuf, and no rules_rust_prost.
+
+That is worth more than the lines it saves. @rules_rust_prost's DEFAULT
+toolchain wires tonic — and through it tokio — into every rust_prost_library.
+crova's I/O is async and does use tokio, which is exactly why it must arrive as
+an ordinary Cargo dependency the consumer's resolver unifies, never as a second
+copy behind a codegen toolchain. Two tokio crates in one process means two
+reactor thread-locals, and a future polled on the wrong one panics with `there
+is no reactor running` while the pod still reports healthy. Having no codegen
+toolchain at all removes that failure mode by construction rather than by
+configuring around it.
+"""
+
+module(
+    name = "crova",
+    version = "0.0.5",
+)
+
+# ⭐ TLA+ MODEL CHECKING for the mapped index.
+#
+# The index answers `contains` AUTHORITATIVELY — it skips the syscall — so the property
+# that matters is not "is it fast" but "can it ever say ABSENT about a blob that is
+# present". That failure is silent and does not self-heal: the client is told the blob is
+# missing, and no retry changes the answer. It is also an INTERLEAVING failure (crash
+# mid-write, lookup during swap-in), which is exactly what tests are worst at and TLC is
+# best at.
+#
+# ⚠ TLC needs a JDK; it comes from Bazel's built-in java runtime toolchain, so this adds no
+# language dependency. rules_tla runs TLC inside a build action, which is why the checks
+# appear as build_tests. Same wiring as tomato-bazel/infra//tla.
+#
+# ⛔ dev_dependency, for the SAME reason register_toolchains is below. A non-dev bazel_dep
+# propagates to every transitive consumer: roma would inherit rules_tla — and with it the
+# requirement that ITS registry chain can resolve rules_tla — purely for depending on the
+# store. Only //tla consumes it, and //tla is only reachable when crova is the ROOT, so a
+# dev dep loses nothing: `bazel test //...` here still model-checks. This is the leakage
+# the module docstring above claims crova does not impose, and shipping 0.0.5 with a
+# non-dev TLA dep would have made that claim false the moment roma depended on it.
+bazel_dep(name = "rules_tla", version = "0.1.1", dev_dependency = True)
+
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+# dev_dependency, because a non-dev `register_toolchains` propagates to every
+# transitive consumer. Imposing a Rust toolchain on a module that wants the store
+# is the leakage tomato-bazel/gate exists to flag, and publishing a module that
+# violates the invariant the registry enforces is not a defensible position.
+#
+# A dev registration still applies when crova is the ROOT, so `bazel test //...`
+# here is unaffected. roma and truss register their own — the same call.
+register_toolchains(
+    "@rust_toolchains//:all",
+    dev_dependency = True,
+)
+
+# @crova_crates — the crate_universe for //crates/*, resolved from the workspace
+# //:Cargo.toml + //:Cargo.lock.
+#
+# NAMESPACED deliberately. `crate.from_cargo(name = "crates")` is what 14
+# registry modules do today and it is a live collision hazard:
+# @rules_rust//crate_universe is a SHARED extension, so the repo it generates is
+# shared across the module graph. Naming it `crova_crates` means a consumer can
+# never collide with us -- and that alone is sufficient, per the note below.
+#
+# ⛔ NOT `isolate = True`, AND THAT IS A CORRECTNESS FIX, NOT A SIMPLIFICATION.
+# `isolate` is still experimental in Bazel 9, so a module that declares it fails
+# to LOAD unless the consumer passes --experimental_isolated_extension_usages:
+#
+#     Error in use_extension: in call to use_extension(), parameter 'isolate' is
+#     experimental and thus unavailable with the current flags.
+#
+# crova set that flag in its own .bazelrc, which does NOT travel with a published
+# module -- a consumer gets MODULE.bazel and nothing else. So every version through
+# 0.0.4 was unconsumable without the consumer independently knowing to set an
+# experimental flag, and nothing caught it because nothing had ever depended on
+# crova. `bazel fetch --repo=@crova` against the registry entry is what surfaced it;
+# `bazel mod show_repo` prints the resolved archive and would have stayed green.
+#
+# Nothing is lost. The comment above is right that the NAMESPACED repo name is the
+# real protection: `crova_crates` cannot collide with a consumer's `crates` whether
+# the extension is isolated or not. `isolate` was belt and braces, and it turned out
+# the belt is what made the trousers unwearable.
+crate = use_extension(
+    "@rules_rust//crate_universe:extension.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crova_crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "crova_crates")
