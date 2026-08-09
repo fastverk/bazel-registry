@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-xBnk4I64uzeb2n93f8x5dHwVHxeStJ2dCYlTFDDcxI0=",
+  "strip_prefix": "rules_tla-0.2.0",
+  "url": "https://github.com/tomato-bazel/rules_tla/archive/refs/tags/v0.2.0.tar.gz"
+}
