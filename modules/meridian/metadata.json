@@ -1,5 +1,5 @@
 {
-  "homepage": "https://github.com/mattmarshall/meridian",
+  "homepage": "https://github.com/meridian-ux/meridian",
   "maintainers": [
     {
       "name": "Matt Marshall",
@@ -7,6 +7,7 @@
     }
   ],
   "repository": [
+    "github:meridian-ux/meridian",
     "github:mattmarshall/meridian"
   ],
   "versions": [
@@ -18,7 +19,8 @@
     "0.2.3",
     "0.2.4",
     "0.2.5",
-    "0.2.6"
+    "0.2.6",
+    "0.25.0"
   ],
   "yanked_versions": {}
 }
