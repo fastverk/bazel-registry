@@ -1,0 +1,5 @@
+{
+  "integrity": "sha256-+E7j4uc3UnxihzK7iKXAIsUawxTpzrpNbGTEu7zdL20=",
+  "strip_prefix": "rules_jsonschema-0.4.0",
+  "url": "https://github.com/tomato-bazel/rules_jsonschema/archive/refs/tags/v0.4.0.tar.gz"
+}
