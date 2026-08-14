@@ -1,18 +1,19 @@
 {
-  "homepage": "https://github.com/tomato-bazel/rules_jsonschema",
-  "maintainers": [
-    {
-      "name": "Matt Marshall",
-      "github": "mattmarshall"
-    }
-  ],
-  "repository": [
-    "github:tomato-bazel/rules_jsonschema"
-  ],
-  "versions": [
-    "0.1.0",
-    "0.2.0",
-    "0.3.0"
-  ],
-  "yanked_versions": {}
+    "homepage": "https://github.com/tomato-bazel/rules_jsonschema",
+    "maintainers": [
+        {
+            "name": "Matt Marshall",
+            "github": "mattmarshall"
+        }
+    ],
+    "repository": [
+        "github:tomato-bazel/rules_jsonschema"
+    ],
+    "versions": [
+        "0.1.0",
+        "0.2.0",
+        "0.3.0",
+        "0.4.0"
+    ],
+    "yanked_versions": {}
 }

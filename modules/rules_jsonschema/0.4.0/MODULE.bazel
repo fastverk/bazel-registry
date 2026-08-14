@@ -1,0 +1,66 @@
+module(
+    name = "rules_jsonschema",
+    version = "0.4.0",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+
+# rules_rust hosts the default Rust + Starlark codegen plugins
+# (//tools/schema_to_rust and //tools/schema_to_starlark). We picked
+# Rust as the host language because the JSON-Schema ecosystem there
+# (typify + serde + the jsonschema crate) handles the long tail of
+# JSON Schema features (oneOf, allOf, refs, patternProperties, …)
+# substantially better than anything in Go.
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+# rules_go is a non-dev dep because the default Go codegen toolchain
+# wraps //tools/schema_to_go (written in Go so it can use go/format
+# for native AST emission). Consumers using `jsonschema_go_library`
+# get rules_go transitively; consumers using only Rust or Starlark
+# don't pay the build cost (the Go binary isn't materialised unless
+# a Go-toolchain action runs).
+bazel_dep(name = "rules_go", version = "0.60.0")
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.23.0")
+
+# Pin a stable Rust toolchain. Newer JSON-Schema crates (regress >=0.10)
+# need a recent rustc for the `let-chains` feature stabilised in 1.88.
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.95.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# crates_universe materialises the Cargo workspace's dep graph as
+# Bazel-fetched repositories. The lockfile pinning is the source of
+# truth for SHAs; `bazel run @crates//:repin` regenerates it.
+crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//tools/schema_to_rust:Cargo.toml",
+        "//tools/schema_to_starlark:Cargo.toml",
+    ],
+)
+use_repo(crate, "crates")
+
+# Register default codegen toolchains so out-of-box consumers get the
+# in-repo binaries without ceremony. Override by registering your own
+# toolchain of the matching toolchain_type ahead of these in your
+# MODULE.bazel.
+register_toolchains(
+    "//rust:default_rust_codegen_toolchain",
+    "//starlark:default_starlark_codegen_toolchain",
+    "//go:default_go_codegen_toolchain",
+)
+
+# Dev-only: smoke example + stardoc.
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "stardoc", version = "0.7.2", dev_dependency = True)
